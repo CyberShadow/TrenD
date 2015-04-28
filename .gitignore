@@ -1,0 +1,11 @@
+*.exe
+*.pdb
+*.ilk
+*.exp
+*.lib
+
+/trend.ini
+
+/data/
+/logs/
+/data.json.gz
