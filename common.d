@@ -81,7 +81,7 @@ static this()
 struct Config
 {
 	DManager.Config.Build buildConfig;
-	string workDir = "../digger";
+	string workDir = "../Digger";
 	string cache = "git";
 	string[string] environment;
 }
