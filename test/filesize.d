@@ -16,9 +16,9 @@ class FilesizeTest : Test
 
 	string fileName;
 
+	override @property string id() { return "size-" ~ fileName.baseName().stripExtension(); }
 	override @property string name() { return "Size of %s".format(fileName.baseName()); }
 	override @property string description() { return "The size of the built file %s.".format(fileName); }
-	override @property string id() { return fileName.baseName().stripExtension(); }
 	override @property Unit unit() { return Unit.bytes; }
 	override @property bool exact() { return true; }
 

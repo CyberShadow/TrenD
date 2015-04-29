@@ -12,15 +12,15 @@ import ae.utils.sini;
 
 class Test
 {
+	/// Unique ID. Should change if the test changes.
+	abstract @property string id();
+
 	/// Short human-readable name. Should mention test parameters,
 	/// but doesn't need to be globally unique.
 	abstract @property string name();
 
 	/// Longer description.
 	abstract @property string description();
-
-	/// Unique ID. Should change if the test changes.
-	abstract @property string id();
 
 	/// What are we measuring (memory, time)
 	abstract @property Unit unit();
