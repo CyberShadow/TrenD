@@ -1,3 +1,4 @@
+import core.thread;
 import core.time;
 
 import std.algorithm;
@@ -21,6 +22,7 @@ debug
 	enum updateInterval = 1.minutes;
 else
 	enum updateInterval = 5.minutes;
+enum idleDuration = 1.minutes;
 
 void main()
 {
@@ -50,6 +52,9 @@ void main()
 			if (Clock.currTime - start > updateInterval)
 				break;
 		}
+
+		log("Idling...");
+		Thread.sleep(idleDuration);
 	}
 }
 
