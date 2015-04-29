@@ -4,6 +4,8 @@ import std.algorithm;
 import std.array;
 import std.conv;
 import std.datetime;
+import std.range;
+import std.typecons;
 
 import ae.sys.d.manager;
 import ae.sys.file;
@@ -13,7 +15,7 @@ import common;
 import test;
 
 bool[string] badCommits;
-bool[string][string] testsDone;
+long[string][string] testResults;
 
 debug
 	enum updateInterval = 1.minutes;
@@ -38,6 +40,7 @@ void main()
 
 		auto start = Clock.currTime;
 
+		log("Running tests...");
 		foreach (commit; todo)
 		{
 			if (!prepareCommit(commit))
@@ -52,24 +55,119 @@ void main()
 
 void loadInfo()
 {
+	badCommits = null;
 	foreach (string commit; query("SELECT [Commit] FROM [Commits] WHERE [Error]=1").iterate())
 		badCommits[commit] = true;
-	foreach (string commit, string testID; query("SELECT [Commit], [TestID] FROM [Results]").iterate())
-		testsDone[commit][testID] = true;
+
+	testResults = null;
+	foreach (string commit, string testID, long value; query("SELECT [Commit], [TestID], [Value] FROM [Results]").iterate())
+		testResults[commit][testID] = value;
 }
 
 alias LogEntry = DManager.LogEntry;
 
+struct ScoreFactors
+{
+	/// Prefer commits in base 2:
+	int base2       =  100; /// points per trailing zero
+
+	/// Prefer commits which are already built and cached:
+	int cached      =  500; /// points if cached
+
+	/// Prefer recent commits:
+	int recentMax   = 1000; /// max points (for newest commit)
+	int recentExp   =   50; /// curve exponent
+
+	/// Prefer untested commits:
+	int untested    =  100; /// points per test
+
+	/// Prefer commits between big differences in test results:
+	int diffMax     = 2000; /// max points (for 100% difference)
+}
+ScoreFactors scoreFactors;
+
 LogEntry[] getToDo()
 {
+	log("Getting log...");
 	auto commits = d.getLog();
 	commits.reverse(); // oldest first
 
-	LogEntry[] result;
-	for (int step = 1 << 30; step; step >>= 1)
-		for (int n = step; n < commits.length; n += step * 2)
-			result ~= commits[n];
-	return result;
+	log("Getting cache state...");
+	auto cacheState = d.getCacheState("origin/master", config.buildConfig);
+
+	log("Calculating...");
+
+	auto scores = new int[commits.length];
+
+	foreach (i; 0..commits.length)
+	{
+		int score;
+
+		if (i)
+		{
+			foreach (b; 0..30)
+				if ((i & (1<<b)) == 0)
+					score += scoreFactors.base2;
+				else
+					break;
+		}
+
+		if (cacheState[commits[i].hash])
+			score += scoreFactors.cached;
+
+		score += cast(int)(scoreFactors.recentMax * (double(i) / (commits.length-1)) ^^ scoreFactors.recentExp);
+
+		scores[i] = score;
+	}
+
+	size_t[string] commitLookup = commits.map!(logEntry => logEntry.hash).enumerate.map!(t => tuple(t[1], t[0])).assocArray;
+	auto testResultArray = new long[commits.length];
+
+	foreach (test; tests)
+	{
+		testResultArray[] = 0;
+		if (test.id in testResults)
+			foreach (commit, value; testResults[test.id])
+				if (auto pindex = commit in commitLookup)
+					testResultArray[*pindex] = value;
+
+		size_t lastIndex = 0;
+		long lastValue = 0;
+		size_t bestIntermediaryIndex = 0;
+		int bestIntermediaryScore = 0;
+
+		foreach (i, value; testResultArray)
+		{
+			if (value == 0)
+			{
+				scores[i] += scoreFactors.untested;
+
+				if (bestIntermediaryScore < scores[i])
+				{
+					bestIntermediaryIndex = i;
+					bestIntermediaryScore = scores[i];
+				}
+			}
+			else
+			{
+				if (lastIndex && bestIntermediaryIndex)
+				{
+					assert(lastValue);
+					auto points = cast(int)(scoreFactors.diffMax * min(value, lastValue) / max(value, lastValue));
+					scores[bestIntermediaryIndex] += points;
+				}
+
+				lastIndex = i;
+				lastValue = value;
+				bestIntermediaryIndex = 0;
+				bestIntermediaryScore = 0;
+			}
+		}
+	}
+
+	auto index = new size_t[commits.length];
+	scores.makeIndex!"a>b"(index);
+	return index.map!(i => commits[i]).array();
 }
 
 bool prepareCommit(LogEntry commit)
@@ -81,7 +179,7 @@ bool prepareCommit(LogEntry commit)
 		return false;
 	}
 
-	bool wantTests = tests.any!(test => test.id !in testsDone.get(commit.hash, null));
+	bool wantTests = tests.any!(test => test.id !in testResults.get(commit.hash, null));
 	if (!wantTests)
 	{
 		debug log("No new tests to sample - skipping");
@@ -132,7 +230,7 @@ void runTests(LogEntry commit)
 				log("Test failed with error: " ~ e.toString());
 			}
 			query("INSERT INTO [Results] ([TestID], [Commit], [Value], [Error]) VALUES (?, ?, ?, ?)").exec(test.id, commit.hash, result, error);
-			testsDone[commit.hash][test.id] = true;
+			testResults[commit.hash][test.id] = result;
 		}
 	}
 }
