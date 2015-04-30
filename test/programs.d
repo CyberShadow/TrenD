@@ -242,7 +242,7 @@ final class BinarySizeTest : ProgramTest
 	}
 }
 
-class ProgramStatTest(string field, Unit unit, bool exact, string name, string description) : ProgramTest
+class ProgramStatTest(string field, Unit statUnit, bool statExact, string statName, string statDescription) : ProgramTest
 {
 	mixin GenerateContructorProxies;
 
@@ -252,10 +252,10 @@ class ProgramStatTest(string field, Unit unit, bool exact, string name, string d
 	abstract ExecutionStats getStats();
 
 	override @property string testID() { return "%s-%s".format(stageID, field.toLower()); }
-	override @property string testName() { return "%s - %s".format(stageName, name); }
-	override @property string testDescription() { return "%s during %s".format(description, stageDescription); }
-	override @property Unit unit() { return Unit.bytes; }
-	override @property bool exact() { return exact; }
+	override @property string testName() { return "%s - %s".format(stageName, statName); }
+	override @property string testDescription() { return "%s during %s".format(statDescription, stageDescription); }
+	override @property Unit unit() { return statUnit; }
+	override @property bool exact() { return statExact; }
 
 	override long sample()
 	{
