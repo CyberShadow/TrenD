@@ -215,28 +215,31 @@ bool prepareCommit(LogEntry commit)
 
 void runTests(LogEntry commit)
 {
+	Test[] testsToRun;
 	foreach (test; tests)
-	{
-		bool haveResult;
 		foreach (int count; query("SELECT COUNT(*) FROM [Results] WHERE [TestID]=? AND [Commit]=?").iterate(test.id, commit.hash))
-			haveResult = count > 0;
-		if (!haveResult)
+			if (count == 0)
+				testsToRun ~= test;
+
+	foreach (test; testsToRun)
+		test.reset();
+
+	foreach (test; testsToRun)
+	{
+		log("Running test: " ~ test.id);
+		long result = 0; string error = null;
+		try
 		{
-			log("Running test: " ~ test.id);
-			long result = 0; string error = null;
-			try
-			{
-				result = test.sample();
-				log("Test succeeded with value: " ~ text(result));
-			}
-			catch (Exception e)
-			{
-				error = e.msg;
-				log("Test failed with error: " ~ e.toString());
-			}
-			query("INSERT INTO [Results] ([TestID], [Commit], [Value], [Error]) VALUES (?, ?, ?, ?)").exec(test.id, commit.hash, result, error);
-			testResults[commit.hash][test.id] = result;
+			result = test.sample();
+			log("Test succeeded with value: " ~ text(result));
 		}
+		catch (Exception e)
+		{
+			error = e.msg;
+			log("Test failed with error: " ~ e.toString());
+		}
+		query("INSERT INTO [Results] ([TestID], [Commit], [Value], [Error]) VALUES (?, ?, ?, ?)").exec(test.id, commit.hash, result, error);
+		testResults[commit.hash][test.id] = result;
 	}
 }
 

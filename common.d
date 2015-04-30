@@ -28,6 +28,9 @@ class Test
 	/// Whether this test is exact (unlikely to change in successive measurements)
 	abstract @property bool exact();
 
+	/// This will be called before any sample() call for all tests.
+	void reset() {}
+
 	/// Perform the test and return the result
 	abstract long sample();
 }
