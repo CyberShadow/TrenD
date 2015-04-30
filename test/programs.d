@@ -184,15 +184,15 @@ final class Program
 					break;
 				}
 
-				long nsecs(timeval tv) { return tv.tv_sec * 1_000_000_000 + tv.tv_usec * 1_000; }
+				long nsecs(timeval tv) { return tv.tv_sec * 1_000_000_000L + tv.tv_usec * 1_000L; }
 
 				iterationStats.userTime   = nsecs(rusage.ru_utime);
 				iterationStats.kernelTime = nsecs(rusage.ru_stime);
-				iterationStats.maxRSS     = rusage.ru_maxrss * 1024;
+				iterationStats.maxRSS     = rusage.ru_maxrss * 1024L;
 			}
 
 			sw.stop();
-			iterationStats.realTime = sw.peek().hnsecs * 100;
+			iterationStats.realTime = sw.peek().hnsecs * 100L;
 
 			if (outputFile)
 				enforce(outputFile.exists, "Program did not create output file " ~ outputFile);
