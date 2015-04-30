@@ -29,11 +29,11 @@ void main()
 	log("Loading existing data...");
 	loadInfo();
 
+	log("Saving results...");
+	atomic!saveJson("data.json.gz");
+
 	while (true)
 	{
-		log("Saving results...");
-		atomic!saveJson("data.json.gz");
-
 		log("Updating...");
 		d.update();
 
@@ -52,6 +52,9 @@ void main()
 			if (Clock.currTime - start > updateInterval)
 				break;
 		}
+
+		log("Saving results...");
+		atomic!saveJson("data.json.gz");
 
 		log("Idling...");
 		Thread.sleep(idleDuration);
