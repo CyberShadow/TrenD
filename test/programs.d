@@ -1,4 +1,4 @@
-module test.filesize;
+module test.programs;
 
 import std.algorithm;
 import std.array;
