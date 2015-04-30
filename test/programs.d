@@ -19,6 +19,15 @@ import common;
 
 const string[] dmdFlags = ["-O", "-inline", "-release"];
 
+version (Posix)
+{
+	import core.sys.posix.sys.resource;
+	import core.sys.posix.sys.wait;
+	import core.stdc.errno;
+
+	extern(C) pid_t wait4(pid_t pid, int *status, int options, rusage *rusage);
+}
+
 struct ProgramInfo
 {
 	string id, name, rawCode;
@@ -153,14 +162,12 @@ final class Program
 			}
 			else
 			{
-				import core.sys.posix.sys.resource;
-
 				rusage rusage;
 
 				while (true)
 				{
 					int status;
-					auto check = wait3(pid.osHandle, &status, &rusage);
+					auto check = wait4(pid.osHandle, &status, 0, &rusage);
 					if (check == -1)
 					{
 						errnoEnforce(errno == EINTR, "Unexpected wait3 interruption");
@@ -175,7 +182,7 @@ final class Program
 					break;
 				}
 
-				long nsecs(timeval tv) { return tv.sec * 1_000_000_000 + tv.usec * 1_000; }
+				long nsecs(timeval tv) { return tv.tv_sec * 1_000_000_000 + tv.tv_usec * 1_000; }
 
 				iterationStats.userTime   = nsecs(rusage.ru_utime);
 				iterationStats.kernelTime = nsecs(rusage.ru_stime);
