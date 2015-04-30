@@ -86,6 +86,8 @@ final class Program
 	{
 		if (!state.haveSource)
 		{
+			if (srcDir.exists)
+				srcDir.rmdirRecurse();
 			srcDir.mkdir();
 			std.file.write(srcFile, info.code);
 
