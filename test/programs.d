@@ -129,7 +129,7 @@ final class Program
 		if (!state.haveExecuted)
 		{
 			needLinked();
-			measure([exeFile], null, state.execution);
+			measure([exeFile.absolutePath()], null, state.execution);
 			state.haveExecuted = true;
 		}
 	}
@@ -138,7 +138,8 @@ final class Program
 	{
 		auto oldPath = environment["PATH"];
 		scope(exit) environment["PATH"] = oldPath;
-		environment["PATH"] = buildPath(d.buildDir, "bin") ~ pathSeparator ~ oldPath;
+		environment["PATH"] = buildPath(d.buildDir, "bin").absolutePath() ~ pathSeparator ~ oldPath;
+		log("PATH=" ~ environment["PATH"]);
 
 		foreach (ref n; bestStats.tupleof)
 			n = typeof(n).max;
@@ -148,6 +149,7 @@ final class Program
 			if (outputFile && outputFile.exists)
 				outputFile.remove();
 
+			log("Running program: %s".format(command));
 			auto pid = spawnProcess(command, stdin, stdout, stderr, null, std.process.Config.none, srcDir);
 
 			ExecutionStats iterationStats;
@@ -174,11 +176,11 @@ final class Program
 						continue;
 					}
 
-					enforce(!WIFSIGNALED(status), "%s failed with signal %s".format(command, status));
+					enforce(!WIFSIGNALED(status), "Program failed with signal %s".format(status));
 					if (!WIFEXITED(status))
 						continue;
 
-					enforce(WEXITSTATUS(status) == 0, "%s failed with status %s".format(command, status));
+					enforce(WEXITSTATUS(status) == 0, "Program failed with status %s".format(status));
 					break;
 				}
 
@@ -191,6 +193,9 @@ final class Program
 
 			sw.stop();
 			iterationStats.realTime = sw.peek().hnsecs * 100;
+
+			if (outputFile)
+				enforce(outputFile.exists, "Program did not create output file " ~ outputFile);
 
 			foreach (i, n; bestStats.tupleof)
 				bestStats.tupleof[i] = min(bestStats.tupleof[i], iterationStats.tupleof[i]);
