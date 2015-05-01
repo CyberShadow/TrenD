@@ -265,7 +265,7 @@ class ProgramStatTest(string field, Unit statUnit, bool statExact, string statNa
 
 	override @property string testID() { return "%s-%s".format(stageID, field.toLower()); }
 	override @property string testName() { return "%s - %s".format(stageName, statName); }
-	override @property string testDescription() { return "%s during %s".format(statDescription, stageDescription); }
+	override @property string testDescription() { return "%s during %s (best of %d runs)".format(statDescription, stageDescription, program.info.iterations); }
 	override @property Unit unit() { return statUnit; }
 	override @property bool exact() { return statExact; }
 
