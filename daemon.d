@@ -218,15 +218,18 @@ bool prepareCommit(LogEntry commit)
 
 void runTests(LogEntry commit)
 {
+	log("Preparing list of tests to run...");
 	Test[] testsToRun;
 	foreach (test; tests)
 		foreach (int count; query("SELECT COUNT(*) FROM [Results] WHERE [TestID]=? AND [Commit]=?").iterate(test.id, commit.hash))
 			if (count == 0)
 				testsToRun ~= test;
 
+	log("Resetting tests...");
 	foreach (test; testsToRun)
 		test.reset();
 
+	query("BEGIN TRANSACTION").exec();
 	foreach (test; testsToRun)
 	{
 		log("Running test: " ~ test.id);
@@ -244,6 +247,8 @@ void runTests(LogEntry commit)
 		query("INSERT INTO [Results] ([TestID], [Commit], [Value], [Error]) VALUES (?, ?, ?, ?)").exec(test.id, commit.hash, result, error);
 		testResults[commit.hash][test.id] = result;
 	}
+	log("Saving test results...");
+	query("COMMIT TRANSACTION").exec();
 }
 
 void saveJson(string target)
