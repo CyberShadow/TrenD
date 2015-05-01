@@ -313,10 +313,10 @@ static this()
 	foreach (info; programs)
 	{
 		auto program = new Program(info);
-		tests ~= new ObjectSizeTest(program);
-		tests ~= new BinarySizeTest(program);
 		foreach (StatTest; TypeTuple!(ProgramRealTimeTest, ProgramUserTimeTest, ProgramKernelTimeTest, ProgramMemoryUsageTest))
 			foreach (PhaseTest; TypeTuple!(ProgramCompilePhaseTest, ProgramLinkPhaseTest, ProgramExecutionPhaseTest))
 				tests ~= new PhaseTest!StatTest(program);
+		tests ~= new ObjectSizeTest(program);
+		tests ~= new BinarySizeTest(program);
 	}
 }
