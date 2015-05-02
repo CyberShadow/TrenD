@@ -313,8 +313,8 @@ static this()
 	foreach (info; programs)
 	{
 		auto program = new Program(info);
-		foreach (StatTest; TypeTuple!(ProgramRealTimeTest, ProgramUserTimeTest, ProgramKernelTimeTest, ProgramMemoryUsageTest))
-			foreach (PhaseTest; TypeTuple!(ProgramCompilePhaseTest, ProgramLinkPhaseTest, ProgramExecutionPhaseTest))
+		foreach (PhaseTest; TypeTuple!(ProgramCompilePhaseTest, ProgramLinkPhaseTest, ProgramExecutionPhaseTest))
+			foreach (StatTest; TypeTuple!(ProgramRealTimeTest, ProgramUserTimeTest, ProgramKernelTimeTest, ProgramMemoryUsageTest))
 				tests ~= new PhaseTest!StatTest(program);
 		tests ~= new ObjectSizeTest(program);
 		tests ~= new BinarySizeTest(program);
