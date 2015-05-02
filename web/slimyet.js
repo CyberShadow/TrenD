@@ -1483,7 +1483,7 @@ $(function () {
       });
   });
 
-  $('#testSelector').change(function() {
+  $('#testSelector').on('change keyup', function() {
     gCurrentTestID = this.value;
     gPlot.updateData();
   });
