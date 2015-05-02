@@ -1,5 +1,4 @@
 CREATE TABLE [Commits] (
-[ID] INTEGER NOT NULL,
 [Commit] CHAR(40) NOT NULL,
 [Message] TEXT NOT NULL,
 [Time] INTEGER NOT NULL,
