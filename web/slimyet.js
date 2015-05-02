@@ -1005,6 +1005,16 @@ Plot.prototype.setZoomRange = function(range, nosync) {
       this.showHighlight(this._highlightLoc, this._highlightWidth);
 }
 
+// Recreate data with new gCurrentTestID etc.
+Plot.prototype.updateData = function() {
+    var range = this.zoomRange;
+    var newseries = this._buildSeries(range[0], range[1]);
+    this.flot.setData(newseries);
+    this.flot.setupGrid();
+    this.flot.draw();
+    this._drawAnnotations();
+}
+
 // Takes two timestamps and builds a list of series based on this plot's axis
 // suitable for passing to flot - condensed to try to hit gMaxPoints.
 Plot.prototype._buildSeries = function(start, stop) {
@@ -1442,6 +1452,11 @@ $(function () {
       for (var ind = 0; ind < gData.tests.length; ind++) {
         var test = gData.tests[ind];
         gTests[test.id] = test;
+
+        var $option = $.new('option', {'value' : test.id}).text(test.name);
+        if (test.id == gCurrentTestID)
+          $option.attr('selected', 'selected');
+        $('#testSelector').append($option);
       }
 
       for (var ind = 0; ind < gData.results.length; ind++) {
@@ -1466,5 +1481,10 @@ $(function () {
       $('.tooltip.zoomed').each(function(ind,ele) {
         $(ele).data('owner').unzoom();
       });
+  });
+
+  $('#testSelector').change(function() {
+    gCurrentTestID = this.value;
+    gPlot.updateData();
   });
 });
