@@ -26,381 +26,16 @@ var gQueryVars = (function () {
   return ret;
 })();
 
-// /mobile/ is an alias for ?mobile
-(function () {
-  if (document.location.pathname.indexOf('/mobile') == 0)
-    gQueryVars['mobile'] = true;
-
-  // Set proper link to inactive
-  var inactive = gQueryVars['mobile'] ? '/mobile/' : '/';
-  $(function () {
-    inactive = $("#navbar a[href='"+inactive+"']");
-    inactive.replaceWith($('<span>').addClass('inactive').text(inactive.text()));
-  });
-})();
-
 /*
  * Annotations to draw on the graph. Format:
- * {
- *   // Anything Date.parse recognizes *or* numeric unix timestamp
- *   'date': "Feb 1 2012 GMT",
- *   // HTML content of tooltip message
- *   'msg': '
- *     We fixed something to do with images sometime before \
- *     <a href="https://hg.mozilla.org/integration/mozilla-inbound/rev/3fdc1c14a8ce">3fdc1c14a8ce</a> \
- *     <p style="color:grey">This is grey text</p> \
- *     <p class="small">yay</p> \
- *   ',
- *   // Optional, disable on desktop or mobile:
- *   'desktop': false,
- *   'mobile': false,
- *   // Show only on some graphs (default all):
- *   'whitelist': [ "Explicit Memory", "Resident Memory" ]
- * }
  */
 
 var gAnnotations = (function() {
-  function annoFormat(msg, bugnum) {
-    if (bugnum)
-      msg += "<br><small>bug " + bugnum + "</small>";
-    // Twelve digit lowercase hex -> rev link
-    msg = msg.replace(/(\b)([a-f0-9]{12})(\b)/g,
-                      '$1<a href="https://hg.mozilla.org/integration/mozilla-inbound/rev/$2">' +
-                      '$2</a>$3');
-    // Bug 12345 -> Bug link
-    msg = msg.replace(/[bB]ug ([0-9]+)/g,
-                      '<a href="https://bugzilla.mozilla.org/show_bug.cgi?id=$1">' +
-                      '$&</a>');
-    return msg;
-  }
   var annotations = [
-    {
-      'date': 1364362111,
-      'mobile': false,
-      'msg': annoFormat('Decommitted memory is now excluded from explicit',
-                        831588),
-      // No effect on resident
-      'whitelist': [ "Explicit Memory", "Miscellaneous Measurements" ]
-    },
-    {
-      'date': 'Thu May 30 18:33:47 2013 -0700',
-      'msg': annoFormat('Images layerization change caused ~40MB regression',
-                        867770),
-    },
-    {
-      'date': 'Mon Jun 03 07:57:31 2013 -0700',
-      'msg': annoFormat('Image layerization regression fixed', 878062),
-    },
-    {
-      'date': 'Mon Jul 29 17:08:01 2013 GMT',
-      'msg': annoFormat('Added heap overhead to explicit; this increased ' +
-                        'explicit without increasing our memory usage.', 898558)
-    },
-    // *************************** Desktop Annotations ***************************
-    {
-      'date': 1363993909,
-      'mobile': false,
-      'msg': annoFormat('Multithreaded image decoding leak fixed', 853390)
-    },
-    {
-      'date': 1363788676,
-      'mobile': false,
-      'msg': annoFormat('Multithreaded image decoding caused us ' +
-                        'to leak some documents', 716140)
-    },
-    {
-      'date': 'Jan 28 2013 GMT',
-      'mobile': false,
-      'msg': annoFormat('15-20 MiB regression in the after-test lines, ' +
-                        'likely caused by bug 820602.', 842756)
-    },
-    {
-      'date': 'Fri, 07 Dec 2012 GMT',
-      'mobile': false,
-      'msg': annoFormat('New HTMLElement bindings caused ~20MB regression ' +
-                        'in peak memory consumption', 833518)
-    },
-    {
-      'date': 'Tue, 18 Dec 2012 04:34:31 GMT',
-      'mobile': false,
-      'msg': annoFormat('~40MB regression (~11%) due to leaked windows', 820602)
-    },
-    {
-      'date': 1395887394,
-      'mobile': false,
-      'msg': annoFormat('Generational GC enabled on desktop', 619558)
-    },
-    // *************************** Mobile Annotations ****************************
-    {
-      'date': 1357139813,
-      'desktop': false,
-      'msg': annoFormat('Updated android NDK from r5c to r8c.', 828650)
-    },
-    {
-      'date': 1357743011,
-      'desktop': false,
-      'msg': annoFormat('Some crypto stuff is now being loaded on startup.',
-                        824023)
-    },
-    {
-      'date': 1358920410,
-      'desktop': false,
-      'msg': annoFormat('Some graphics code is loaded earlier, moving the ' +
-                        'Start memory usage up but leaving StartSettled as-is.',
-                        828126)
-    },
-    {
-      'date': 1358593871,
-      'desktop': false,
-      'msg': annoFormat('Regression from adding new fonts. Tradeoff ' +
-                        'accepted for increased readability. Some of this ' +
-                        'was later reduced in bug 844669.', 831354)
-    },
-    {
-      'date': 1359474609,
-      'desktop': false,
-      'msg': annoFormat('Regression from OS.File debug code, backed out in ' +
-                        '8728de36d4a8.', 828201)
-    },
-    {
-      'date': 1361788819,
-      'desktop': false,
-      'msg': annoFormat('Regression from graphite font shaping, tracked in ' +
-                        'bug 846832 and corrected in 6a0bcaa622f0.', 700023)
-    },
-    {
-      'date': 1361831517,
-      'desktop': false,
-      'msg': annoFormat('Giant drop-spike is a result of the low-memory ' +
-                        '<a href="https://staktrace.com/spout/entry.php?id=782">'+
-                        'tab zombification</a> behaviour.')
-    },
-    {
-      'date': 1361917561,
-      'desktop': false,
-      'msg': annoFormat('Giant drop-spike is a result of the low-memory ' +
-                        '<a href="https://staktrace.com/spout/entry.php?id=782">'+
-                        'tab zombification</a> behaviour.')
-    },
-    {
-      'date': 1361918975,
-      'desktop': false,
-      'msg': annoFormat('Switched device running the test to a Galaxy Nexus; ' +
-                        'baseline values expected to change.')
-    },
-    {
-      'date': 1362421422,
-      'desktop': false,
-      'msg': annoFormat('Improvement from turning off graphite in fonts.', 846832)
-    },
-    {
-      'date': 1362416958,
-      'desktop': false,
-      'msg': annoFormat('Improvement from analysis of font-related memory usage.',
-                        844669)
-    },
-    {
-      'date': 1363491479,
-      'desktop': false,
-      'msg': annoFormat('Improvement from zones landing', 759585)
-    },
-    {
-      'date': 1364566105,
-      'desktop': false,
-      'msg': annoFormat('Regression from Push service landing. Tracked in bug ' +
-                        '857135 and corrected in fc8267682725.', 822712)
-    },
-    {
-      'date': 1364841472,
-      'desktop': false,
-      'msg': annoFormat('Regression being tracked in bug 862390.')
-    },
-    {
-      'date': 1365454665,
-      'desktop': false,
-      'msg': annoFormat('Improvement from removing push-related components from ' +
-                        'Android build.', 857135)
-    },
-    {
-      'date': 1364908990,
-      'desktop': false,
-      'msg': annoFormat('Small regression from turning on IonMonkey for ARMv6 ' +
-                        'Android builds.', 855839)
-    },
-    {
-      'date': 1365004235,
-      'desktop': false,
-      'msg': annoFormat('Small regression (resident-only) from baseline compiler ' +
-                        'landing and making libxul bigger.')
-    },
-    {
-      'date': 1366048480,
-      'desktop': false,
-      'msg': annoFormat('Regression being tracked in bug 862403.')
-    },
-    {
-      'date': 1369031534,
-      'desktop': false,
-      'msg': annoFormat('On-demand decompression causes us to double-count things. ' +
-                        'The regression here is not actually a regression.', 848764)
-    },
-    {
-      'date': 1369763440,
-      'desktop': false,
-      'msg': annoFormat('Enabling 24-bit colour on Android causes a memory regression. ' +
-                        'It was backed out in 495b385ae811 for test failures.', 803299)
-    },
-    {
-      'date': 1369838059,
-      'desktop': false,
-      'msg': annoFormat('Enabling 24-bit colour on Android causes a memory regression. ' +
-                        'It was backed out in 281dc9793a73 for Tch and Tpan regressions.', 803299)
-    },
-    {
-      'date': 1372195899,
-      'desktop': false,
-      'msg': annoFormat('Fonts are now loaded directly from the omnijar and decompressed ' +
-                        'in memory. This has an acceptable non-startup memory regression.', 878674)
-    },
-    {
-      'date': 1373588395,
-      'desktop': false,
-      'msg': annoFormat('Elfhack enabled, memory gained.', 892355)
-    },
-    {
-      'date': 1374146101,
-      'desktop': false,
-      'msg': annoFormat('Elfhack disabled, memory lost.', 894885)
-    },
-    {
-      'date': 1374669205,
-      'desktop': false,
-      'msg': annoFormat('Elfhack re-enabled, memory re-gained.', 894885)
-    },
-    {
-      'date': 1374806525,
-      'desktop': false,
-      'msg': annoFormat('Static initializers added in bug 894448, fixed in bug 899368', 899134)
-    },
-    {
-      'date': 1375117971,
-      'desktop': false,
-      'msg': annoFormat('Increase in GC heap memory, marked WONTFIX', 899584)
-    },
-    {
-      'date': 1375142305,
-      'desktop': false,
-      'msg': annoFormat('Static initializer fixup', 899368)
-    },
-    {
-      'date': 1376300292,
-      'desktop': false,
-      'msg': annoFormat('Addon manager change', 906747)
-    },
-    {
-      'date': 1377312199,
-      'desktop': false,
-      'msg': annoFormat('More static constructors added', 909338)
-    },
-    {
-      'date': 1377545370,
-      'desktop': false,
-      'msg': annoFormat('Static constructors removed', 909328)
-    },
-    {
-      'date': 1377877508,
-      'desktop': false,
-      'msg': annoFormat('Updated Fennec profile used in AWSY harness')
-    },
-    {
-      'date': 1391544327,
-      'desktop': false,
-      'msg': annoFormat('Bug 625383 caused AWSY runs to frequently hit timeout and fail', 971001)
-    },
-    {
-      'date': 1392122504,
-      'desktop': false,
-      'msg': annoFormat('Updated Fennec profile used in AWSY harness')
-    },
-    {
-      'date': 1392153656,
-      'desktop': false,
-      'msg': annoFormat('Backed out bug 625383', 971001)
-    },
-    {
-      'date': 1394684478,
-      'desktop': false,
-      'msg': annoFormat('Bug 979101 caused devtools to load on startup', 983129)
-    },
-    {
-      'date': 1394765950,
-      'desktop': false,
-      'msg': annoFormat('Backed out bug 979101', 983129)
-    },
-    {
-      'date': 1397539462,
-      'desktop': false,
-      'msg': annoFormat('Fix incorrect memory report for images', 995880)
-    },
-    {
-      'date': 1400197141,
-      'desktop': false,
-      'msg': annoFormat('New cache turned on', 1013333)
-    },
-    {
-      'date': 1400602677,
-      'desktop': false,
-      'msg': annoFormat('Update Fennec profile used in AWSY harness')
-    },
-    {
-      'date': 1411541780,
-      'msg': annoFormat('45MB memory regression from suggestions for ReferenceError', 947044)
-    },
-    {
-      'date': 1411669939,
-      'msg': annoFormat('Bug 947044 backed out for regressions', 947044)
-    },
-    {
-      'date': 1412132897,
-      'msg': annoFormat('Resource timing was causing leaks', 1002855)
-    },
-    {
-      'date': 1413895805,
-      'msg': annoFormat('Resource timing leak fixed', 1064706)
-    },
-    {
-      'date': 1415326632,
-      'msg': annoFormat('imgStatusTracker simplification caused BF cache to retain pages for longer', 1084136)
-    },
-    {
-      'date': 1418534275,
-      'msg': annoFormat('Doing more compartmental GCs breaks decommitting of arenas', 1052793)
-    },
-    {
-      'date': 1420739696,
-      'msg': annoFormat('Backed out bug 1052793 to fix regression', 1052793)
-    },
-    {
-      'date': 1421897779,
-      'msg': annoFormat('Workaround for bug 1084136 landed on central', 1084136)
-    },
-    {
-      'date': 'Wed Feb 11 22:09:25 2015 GMT',
-      'msg': 'Switching AWSY to marionette reenabled bfcache, this caused memory usage to go up.'
-    } 
-    // The 'date' timestamps in the list above can be obtained from the page at
-    // http://hg.mozilla.org/integration/mozilla-inbound/json-pushes?changeset=<cset>
-    // where <cset> is the appropriate inbound change.
+    /*TODO*/
   ];
 
-  // Turn dates into date objects, sort by date
-  for (var i = 0; i < annotations.length; i++) {
-    var anno = annotations[i];
-    var date = new Date(typeof(anno['date']) == "number"
-                        ? anno['date'] * 1000
-                        : anno['date']);
-    anno['date'] = date;
-  }
+  // Sort by date
   annotations.sort(function(a, b) {
     a = a['date'].getTime();
     b = b['date'].getTime();
@@ -461,6 +96,8 @@ var gDarkColorsFirst = [
 // determine date placement on the X-axis of graphs
 // See: https://wiki.mozilla.org/RapidRelease/Calendar
 var gReleases = [
+  /* TODO */
+  /*
   {dateStr: "2011-03-03", name: "Fx 4"},
   {dateStr: "2011-04-12", name: "Fx 5"},
   {dateStr: "2011-05-24", name: "Fx 6"},
@@ -500,6 +137,7 @@ var gReleases = [
   {dateStr: "2015-05-18", name: "Fx 40"},
   {dateStr: "2015-06-29", name: "Fx 41"},
   {dateStr: "2015-08-10", name: "Fx 42"}
+  */
 ];
 
 // Create gReleases[x].date objects
@@ -519,85 +157,19 @@ var gReleaseLookup = function() {
   return lookup;
 }();
 
-// Which series from series.json to graph where with what label. See
-// /data/areweslimyet.json and comments below. These are exported from the full
-// test database by create_graph_json.py
-var gSeries = {
-  "Resident Memory" : {
-    'StartMemoryResidentV2':         "RSS: Fresh start",
-    'StartMemoryResidentSettledV2':  "RSS: Fresh start [+30s]",
-    'MaxMemoryResidentV2':           "RSS: After TP5",
-    'MaxMemoryResidentSettledV2':    "RSS: After TP5 [+30s]",
-    'MaxMemoryResidentForceGCV2':    "RSS: After TP5 [+30s, forced GC]",
-    'EndMemoryResidentV2':           "RSS: After TP5, tabs closed",
-    'EndMemoryResidentSettledV2':    "RSS: After TP5, tabs closed [+30s]",
-    'EndMemoryResidentForceGCV2':    "RSS: After TP5, tabs closed [+30s, forced GC]"
-  },
-  "Explicit Memory" : {
-    'StartMemoryV2':         "Explicit: Fresh start",
-    'StartMemorySettledV2':  "Explicit: Fresh start [+30s]",
-    'MaxMemoryV2':           "Explicit: After TP5",
-    'MaxMemorySettledV2':    "Explicit: After TP5 [+30s]",
-    'MaxMemoryForceGCV2':    "Explicit: After TP5 [+30s, forced GC]",
-    'EndMemoryV2':           "Explicit: After TP5, tabs closed",
-    'EndMemorySettledV2':    "Explicit: After TP5, tabs closed [+30s]",
-    'EndMemoryForceGCV2':    "Explicit: After TP5, tabs closed [+30s, forced GC]"
-  },
-  "Miscellaneous Measurements" : {
-    'MaxHeapUnclassifiedV2':  "Heap Unclassified: After TP5 [+30s]",
-    'MaxJSV2':                "JS: After TP5 [+30s]",
-    'MaxImagesV2':            "Images: After TP5 [+30s]"
-  }
-};
 
-var gHgBaseUrl = 'https://hg.mozilla.org/integration/mozilla-inbound';
+// Contents of data.json
+var gData;
 
-// Select android data. Use the same gSeries, but s/After TP5/After tabs/ and
-// prepend 'Android' to series names.
-if (gQueryVars['mobile']) {
-  for (var series in gSeries) {
-    for (var dp in gSeries[series]) {
-      gSeries[series]['Android'+dp] = gSeries[series][dp].replace("After TP5", "After tabs");
-      delete gSeries[series][dp];
-    }
-  }
-}
+// Key data lookup
+var gCommits = {};
+var gTests = {};
 
-// gGraphData pulls /data/<series>.json which has a *condensed* series of builds
-// and associated data-lines. After a certain zoom level we need to pull in the
-// full-resolution data into gFullData. gGraphData['allseries'] contains info on
-// the sub-series that can be fetched for gFullData.
-//
-// The pre-condensed datapoints and ones we fetch ourselves all have
-// min/median/max data, and the revision-range and time-range. See the
-// /data/areweslimyet.json file.
-//
-// _getInvolvedSeries() - Determines if our zoom level justifies using
-//   full data series, lists them (none means 'just use gGraphData')
-// Plot.SetZoomRange() - Changes the zoom level, if _getInvolvedSeries() advises
-//   use of series we don't have, fire off requests for them. Once those have
-//   completed, re-render the graph (graph will zoom in, then re-render with
-//   more points when they arrive)
-//
-// Plot._buildSeries() - Builds a series using the logic:
-// - *if* we *dont* have gFullData for all ranges involved
-//   - Merge every N condensed-points in gGraphData OR
-//   - Show all condensed-points in gGraphData [slightly more zoomed]
-// - *if* gFullData has the data for all series involved:
-//   - Merge those points outselves OR
-//   - Show every datapoint (all the way zoomed in)
-var gGraphData;
-var gFullData = {};
+// Current test
+var gCurrentTestID = 'program-hello-binarysize-10';
 
-// 'per build data' is /data/<buildname>.json. <buildname> is usually a
-// changeset id, but doesn't need to be (although the tooltip assumes they are)
-// It primarily contains a dump of the about:memory reporters, and is only used
-// for the data-dump you get when clicking on a tooltip. This is fetched/cached
-// by getPerBuildData()
-var gPerBuildData = {};
-
-// List of *top-level* plots that should be zoom-sync'd
-var gZoomSyncPlots = {};
+// Our plot
+var gPlot;
 
 // Range of all non-null datapoints.
 var gDataRange;
@@ -657,10 +229,31 @@ function mkDelta(mem, lastmem) {
   return obj;
 }
 
-function mkHgLink(rev) {
+function gitURL(rev) {
+  var commit = gCommits[rev];
+  var firstLine = commit.message.split('\n')[0];
+  var i = firstLine.indexOf(': ');
+  var repo = firstLine.substr(0, i);
+  var message = firstLine.substr(i+2);
+  var m = message.match(/^Merge pull request #(\d+) from /);
+  var href;
+  if (m)
+    return 'https://github.com/D-Programming-Language/'+repo+'/pull/'+m[1];
+  else
+    return 'https://bitbucket.org/cybershadow/d/commits/' + rev;
+}
+
+function gitRangeURL(rev0, rev1) {
+  // Convert closed range to half-open range
+  if (gCommits[rev0].prev)
+    rev0 = gCommits[rev0].prev.commit;
+  return 'https://bitbucket.org/cybershadow/d/branches/compare/'+rev1+'..'+rev0+'#commits';
+}
+
+function mkGitLink(rev) {
   return $.new('a', { 'class': 'buildlink', 'target': '_blank' })
-          .attr('href', gHgBaseUrl + "/rev/" + rev.slice(0,12))
-          .text(rev);
+          .attr('href', gitURL(rev))
+          .text(rev.slice(0,12));
 }
 
 // float 12039123.439 -> String "12,039,123.44"
@@ -751,271 +344,6 @@ function getBuildTimeRange(firstbuild, lastbuild)
   return range;
 }
 
-//
-// For the about:memory-esque display
-//
-
-// Expand a tree node
-function treeExpandNode(node, noanimate) {
-  if (!node.is('.hasChildren')) return;
-
-  var subtree = node.find('.subtree');
-  if (!subtree.length) {
-    var subtree = $.new('div').addClass('subtree').hide();
-    memoryTreeNode(subtree, node.data('nodeData'),
-                              node.data('select'),
-                              node.data('path'),
-                              node.data('depth'));
-    subtree.appendTo(node);
-  }
-  if (noanimate)
-    subtree.show();
-  else
-    subtree.slideDown(250);
-  node.children('.treeNodeTitle').find('.treeExpandClicker').text('[-]');
-}
-
-// Collapse a tree node
-function treeCollapseNode(node) {
-  node.children('.subtree').slideUp(250);
-  node.children('.treeNodeTitle').find('.treeExpandClicker').text('[+]');
-}
-
-// Collapse/Expand a tree node
-function treeToggleNode(node) {
-  if (node.find('.subtree:visible').length)
-    treeCollapseNode(node);
-  else
-    treeExpandNode(node);
-}
-
-// Create a about:memory-esque tree of values from a list of nodes.
-// The 'datapoint' value is the name of the point to highlight within the tree.
-// This is a wrapper for memoryTreeNode()
-function makeMemoryTree(title, path, nodes, datapoint) {
-  var memoryTree = $.new('div', { class: 'memoryTree' }, { display: 'none' });
-  // memoryTree title
-  var treeTitle = $.new('div', { class: 'treeTitle' }).appendTo(memoryTree);
-  $.new('h3').text(title)
-              .appendTo(treeTitle);
-  // datapoint subtitle
-  $.new('div').addClass('highlight')
-              .text(datapoint.replace(/\//g, ' -> '))
-              .appendTo(treeTitle);
-  memoryTreeNode(memoryTree, nodes, datapoint, path);
-
-  return memoryTree;
-}
-
-// Render a memory tree into <target>, with node data <data>. The node specified
-// by <select> should be highlighted. <path> is an array of strings indicating
-// path of this branch in the overall tree. <depth> represents how many levels
-// deep this branch is in the overall tree.
-function memoryTreeNode(target, data, select, path, depth) {
-  if (depth === undefined)
-    depth = 0;
-
-  // TODO Use 'mixed' units as an indicator of container nodes instead of hard
-  //      coding.
-  var showVal = depth >= 2;
-  var showPct = depth >= 3;
-
-  // if select is passed as "a/b/c", split it so it is an array
-  if (typeof(select) == "string") {
-    select = select.split('/');
-  }
-
-  function defval(obj) {
-    if (typeof(obj) == 'number')
-      return obj
-    return obj['_val'] == undefined ? null : obj['_val'];
-  }
-
-  // Sort nodes
-  var rows = [];
-  for (var node in data) {
-    // Nodes starting with _ are not children (_val, _sum, _units)
-    if (node[0] == '_')
-      continue;
-    rows.push(node);
-  }
-  if (showVal) {
-    // Sort by memory size
-    rows.sort(function (a, b) {
-      var av = defval(data[a]) == null ? 0 : defval(data[a]);
-      var bv = defval(data[b]) == null ? 0 : defval(data[b]);
-      return bv - av;
-    });
-  } else {
-    // Sort reverse alphanumeric
-    rows = rows.sort(function (a, b) { return a == b ? 0 : a < b ? 1 : -1 });
-  }
-
-  // Add rows
-  var parentval = defval(data);
-  var node;
-  while (node = rows.shift()) {
-    path.push(node);
-
-    var leaf = true;
-    if (typeof(data[node]) != 'number') {
-      for (var key in data[node])
-        if (key[0] !== '_')
-          leaf = false
-    }
-    var treeNode = $.new('div')
-                    .addClass('treeNode')
-                    .data('nodeData', data[node])
-                    .data('depth', depth + 1)
-                    .data('path', path);
-    var nodeTitle = $.new('div')
-                     .addClass('treeNodeTitle')
-                     .appendTo(treeNode);
-
-    // Add value if inside a memNode
-    var val = defval(data[node]);
-    if (showVal && val != null) {
-      // Value
-      var prettyval;
-      if (data[node] instanceof Object && '_units' in data[node]) {
-        if (data[node]['_units'] == 'pct')
-          // 'percent' memory reporters are fixed point
-          prettyval = (val / 100).toFixed(2) + '%';
-        else if (data[node]['_units'] == 'cnt')
-          // 'count' memory reporters are unitless
-          prettyval = val
-        else
-          logError("unknown unit type " + data[node]['_units']);
-      } else {
-        // Default unit is bytes
-        prettyval = formatBytes(val);
-      }
-      $.new('span').addClass('treeValue')
-                   .text(prettyval)
-                   .appendTo(nodeTitle);
-      // Percentage of parent node
-      var pct = "("+prettyFloat(100* (val / parentval))+"%)";
-      if (showPct && parentval != null) {
-        $.new('span').addClass('treeValuePct')
-                     .text(pct)
-                     .appendTo(nodeTitle);
-      }
-    }
-
-    // Add label
-    var title = node;
-    var subtitle;
-    if (subtitle = /^(.+)\((.+)\)$/.exec(node)) {
-      title = subtitle[1];
-      subtitle = subtitle[2];
-    }
-    var label = $.new('span').addClass('treeNodeLabel')
-                             .appendTo(nodeTitle).text(title);
-    if (subtitle) {
-      $.new('span').addClass('subtitle').text(' '+subtitle).appendTo(label);
-    }
-
-    // Add treeExpandClicker and click handler if node has children
-    var expandClick = $.new('span').addClass('treeExpandClicker');
-    nodeTitle.prepend(expandClick);
-    if (!leaf) {
-      expandClick.text('[+]');
-      nodeTitle.click(function () { treeToggleNode($(this).parent()); });
-      treeNode.addClass('hasChildren');
-    }
-
-    // Add an export element to each checkpoint.
-    if (depth == 1) {
-      var memoryReportName = path.join('_') + '_memory_report.gz';
-      var exportClick = $.new('a', { 'href': '#', 'class': 'button' })
-                         .text(' [export]');
-      exportClick.data('checkpoint', data[node]);
-      exportClick.data('reportName', memoryReportName);
-      nodeTitle.append(exportClick);
-      exportClick.click(function() {
-        var worker = new Worker("/about_memory_worker.js");
-        $(this).text(' [exporting...]');
-        $(this).attr('href', null);
-        worker.onmessage = function(aEvent) {
-          var url = window.URL.createObjectURL(aEvent.data);
-          this.downloadLink.text(' [download]');
-          this.downloadLink.attr('href', url);
-          this.downloadLink.attr('download', this.downloadLink.data('reportName'));
-          this.downloadLink.unbind('click');
-
-          gObjectURLs.push(url);
-        }
-
-        worker.downloadLink = $(this);
-
-        worker.postMessage({
-          filename: memoryReportName,
-          checkpoint: $(this).data('checkpoint'),
-        });
-
-        return false;
-      });
-    }
-
-    // Handle selecting a start node
-    if (select && node == select[0]) {
-      if (select.length == 1) {
-        treeNode.addClass('highlight');
-      } else {
-        treeNode.data('select', select.splice(1));
-      }
-      treeExpandNode(treeNode, true);
-    }
-
-    path.pop();
-    target.append(treeNode);
-  }
-}
-
-// If this range is 'zoomed' enough to warrant using full-resolution data
-// (based on gMaxPoints), return the list of gFullData series names that would
-// be needed. Return false if overview data is sufficient for this range.
-// It's up to the caller to call getFullSeries(name) to start downloading any
-// of these that arn't downloaded.
-function _getInvolvedSeries(range) {
-  var ret = [];
-  var groupdist = Math.round((range[1] - range[0]) / gMaxPoints);
-
-  // Unless the requested grouping distance is < 80% of the overview data's
-  // distance, don't pull in more
-  if (!gQueryVars['nocondense'] && isFinite(groupdist) &&
-      groupdist / gGraphData['condensed'] > 0.8)
-    return null;
-
-  for (var x in gGraphData['allseries']) {
-    var s = gGraphData['allseries'][x];
-    if (range[1] >= s['fromtime'] && range[0] <= s['totime'])
-      ret.push(s['dataname']);
-  }
-
-  return ret;
-}
-
-// Helper to call _getInvolvedSeries and call GetFullSeries on all results, with
-// final callback.
-function _fetchInvolvedSeries(range, callback) {
-  var fullseries = _getInvolvedSeries(range);
-  var queued = 0;
-  var pending = 0;
-  for (var x in fullseries) {
-    if (!(fullseries[x] in gFullData)) {
-      pending++;
-      var self = this;
-      getFullSeries(fullseries[x], function () {
-        if (--pending == 0)
-          callback.call(null, queued);
-      });
-    }
-  }
-  queued = pending;
-  if (queued == 0)
-    callback.call(null, 0);
-}
 
 //
 // Tooltip
@@ -1132,10 +460,10 @@ Tooltip.prototype.showBuild = function(label, series, buildset, buildindex, seri
 
   var value = series[buildindex][1];
   var build = buildset[buildindex];
-  var rev = build['firstrev'].slice(0,12);
+  var rev = build['firstrev'];
 
   // Label
-  this.append($.new('h3').text(label));
+  //this.append($.new('h3').text(label));
   // Build link / time
   var ttinner = $.new('p');
   var valobj = $.new('p').text(formatBytes(value) + ' ');
@@ -1144,12 +472,12 @@ Tooltip.prototype.showBuild = function(label, series, buildset, buildindex, seri
     valobj.append(mkDelta(value, series[buildindex - 1][1]));
   }
   ttinner.append(valobj);
-  ttinner.append($.new('b').text('build '));
-  ttinner.append(mkHgLink(rev));
+  ttinner.append($.new('b').text('commit '));
+  ttinner.append(mkGitLink(rev));
   if (build['lastrev']) {
     // Multiple revisions, add range link
     ttinner.append(' .. ');
-    ttinner.append(mkHgLink(build['lastrev'].slice(0,12)));
+    ttinner.append(mkGitLink(build['lastrev']));
   }
   if (buildindex > 0) {
     // Add pushlog link
@@ -1157,17 +485,22 @@ Tooltip.prototype.showBuild = function(label, series, buildset, buildindex, seri
     // show the broadest push log possible when dealing with them
     var prevbuild = buildset[buildindex - 1];
     if (prevbuild && prevbuild['firstrev']) {
-      var prevrev = prevbuild['firstrev'].slice(0,12);
-      var pushrev = build['lastrev'] ? build['lastrev'].slice(0,12) : rev;
-      var pushlog = gHgBaseUrl + "/pushloghtml?fromchange=" + prevrev + "&tochange=" + pushrev;
+      var prevrev = prevbuild['firstrev'];
+      var pushrev = build['lastrev'] ? build['lastrev'] : rev;
+      //var pushlog = gHgBaseUrl + "/pushloghtml?fromchange=" + prevrev + "&tochange=" + pushrev;
+      var pushlog = gitRangeURL(prevrev, pushrev);
       ttinner.append(" (");
       ttinner.append($.new('a', { 'href' : pushlog, 'target' : '_blank' })
-                     .text("pushlog"));
+                     .text("commit list"));
       ttinner.append(")");
     }
   }
   // Time
   ttinner.append($.new('p').addClass('timestamp').text(prettyDate(build['time'])));
+  // Commit message
+  if (!build['lastrev']) {
+    ttinner.append($.new('p').addClass('commit-message').text(gCommits[rev].message));
+  }
   // Full timerange (shown on zoom)
   if (build['lastrev'] && build['timerange']) {
     var timerange = $.new('p').addClass('timerange').hide();
@@ -1176,62 +509,7 @@ Tooltip.prototype.showBuild = function(label, series, buildset, buildindex, seri
     timerange.append(prettyDate(build['timerange'][1]));
     ttinner.append(timerange);
   }
-  var self = this;
-  ttinner.append($.new('p').addClass("hoverNote")
-                 .text("click for full memory info").click(function () {
-                   self.buildDetail();
-                 }));
   this.append(ttinner);
-}
-
-// The zoomed build-detail view for builds we represent. Requires the tooltip be
-// visible and initialized with showBuild();
-Tooltip.prototype.buildDetail = function() {
-  this.zoom();
-
-  // We should already be populated from showBuild().
-  // Zoom tooltip, remove the 'click to hover' note and add a loading banner.
-  var loading = $.new('h2', null, {
-    display: 'none',
-    'text-align': 'center',
-  }).text('Loading test data...').attr('id', 'loading');
-
-  // Switch to showing full timerange until unzoomed
-  var timerangeobj = this.content.find('.timerange');
-  if (timerangeobj.length) {
-    var timeobj = this.content.find('.timestamp');
-    timeobj.insertBefore(timerangeobj);
-    timeobj.addClass('fading').fadeOut(250);
-    timerangeobj.removeClass('fading').fadeIn(250);
-    this.onUnzoom(function () {
-      timerangeobj.insertBefore(timeobj);
-      timerangeobj.addClass('fading').fadeOut(250);
-      timeobj.removeClass('fading').fadeIn(250);
-    });
-  }
-
-  this.append(loading);
-  this.obj.find(".hoverNote").remove();
-  loading.fadeIn();
-
-  var self = this;
-  var build = this.build_set[this.build_index];
-
-  if ('lastrev' in build) {
-    // Build is a series. We need to make sure we have full res data to
-    // enumerate all the builds in this range.
-    this._asyncHelper(_fetchInvolvedSeries, build['timerange'], function() {
-      self.append(self._buildlistView());
-    });
-  } else {
-    // Only one build, just display memory view
-    var revision = build['firstrev'];
-    this._asyncHelper(getPerBuildData, revision, function () {
-      var memoryview = self._memoryView(revision);
-      self.append(memoryview);
-      memoryview.fadeIn(250);
-    });
-  }
 }
 
 // Wraps a |someAsyncThing(arg, success_callback, fail_callback)| style call,
@@ -1314,7 +592,7 @@ Tooltip.prototype._buildlistView = function () {
                          .appendTo(buildcrumb);
         buildcrumb.append('] ');
         // revision (also takes you to hg)
-        buildcrumb.append(mkHgLink(build['revision']));
+        buildcrumb.append(mkGitLink(build['revision']));
         // Memory usage
         buildcrumb.append($.new('span').text(' ' + formatBytes(mem)));
         // delta
@@ -1411,44 +689,6 @@ Tooltip.prototype._memoryView = function(revision) {
   var title = series_info['test'] + ' :: ' + revision.slice(0,12);
   var path = [revision, series_info['test']];
   return makeMemoryTree(title, path, nodes, datapoint);
-}
-
-Tooltip.prototype.zoom = function(callback) {
-  var w = this.obj.parent().width();
-  var h = this.obj.parent().height();
-
-  // If the parent is offscreen, try to bump it on screen if we can
-  var offset = this.obj.parent().offset();
-  var scrolltop = $('html,body').scrollTop();
-  var scroll = scrolltop;
-
-  if (scroll + window.innerHeight < offset.top + h)
-    scroll = offset.top - (window.innerHeight - h) + 20;
-  if (scroll > offset.top)
-    scroll = offset.top - 20;
-
-  if (scroll != scrolltop)
-    $('html,body').animate({ 'scrollTop' : scroll }, 500);
-
-  this.obj.show();
-  // Animate these by pixel values to workaround wonkiness in jquery+chrome
-  this.obj.stop().addClass('zoomed').animate({
-    width: Math.round(0.94 * w) + 'px',
-    height: Math.round(0.95 * h) + 'px',
-    left: Math.round(0.03 * w) + 'px',
-    top: '0px',
-    opacity: 1
-  }, 500, null, callback);
-
-  // Close button
-  var self = this;
-  $.new('a', { class: 'button closeButton', href: '#' })
-   .text('[x]')
-   .appendTo(this.obj).css('display', 'none')
-   .fadeIn(500).click(function () {
-     self.unzoom();
-     return false;
-   });
 }
 
 Tooltip.prototype.onUnzoom = function(callback) {
@@ -1550,14 +790,15 @@ function getPerBuildData(buildname, success, fail) {
 // Creates a plot, appends it to <appendto>
 // - axis -> { 'AxisName' : 'Nicename', ... }
 //
-function Plot(name, appendto) {
-  if (!this instanceof Plot) {
+function Plot(appendto) {
+  if (!(this instanceof Plot)) {
     logError("Plot() used incorrectly");
     return;
   }
 
-  this.name = name;
-  this.axis = gSeries[name];
+  this.axis = {};
+  for (var testID in gTests)
+    this.axis[testID] = gTests[testID].name;
   this.zoomed = false;
 
   this.dataRange = gDataRange;
@@ -1569,7 +810,7 @@ function Plot(name, appendto) {
   $.new('h2').text(name).appendTo(this.container);
   this.rhsContainer = $.new('div').addClass('rhsContainer').appendTo(this.container);
   this.zoomOutButton = $.new('a', { href: '#', class: 'zoomOutButton' })
-                        .appendTo(this.rhsContainer)
+                        .appendTo($('#zoomOutButtonContainer'))
                         .text('Zoom Out')
                         .hide()
                         .click(function () {
@@ -1652,7 +893,7 @@ function Plot(name, appendto) {
         ticks: function(axis) {
           // If you zoom in and there are no points to show, axis.max will be
           // very small.  So let's say that we'll always graph at least 32mb.
-          var axisMax = Math.max(axis.max, 32 * 1024 * 1024);
+          var axisMax = Math.max(axis.max, 1 * 1024 * 1024);
 
           var approxNumTicks = 10;
           var interval = axisMax / approxNumTicks;
@@ -1683,14 +924,7 @@ function Plot(name, appendto) {
     }
   );
 
-  // If our condensed data is not enough to satisfy gMaxPoints
-  // (e.g. ?maxpoints=9000) we'll need to fetch high resolution series and
-  // re-render.
   var self = this;
-  _fetchInvolvedSeries(this.dataRange, function (fetched) {
-    if (fetched > 0)
-      self.setZoomRange(self.zoomRange, true);
-  });
 
   //
   // Background selector for zooming
@@ -1726,6 +960,8 @@ function Plot(name, appendto) {
   this.obj.bind("plotclick", function(event, pos, item) { self.onClick(item); });
   this.obj.bind("plothover", function(event, pos, item) { self.onHover(item, pos); });
   this.obj.bind("mouseout", function(event) { self.hideHighlight(); });
+
+  self.setZoomRange(self.zoomRange, true);
 }
 
 // Zoom this graph to given range. If called with no arguments, zoom all the way
@@ -1756,10 +992,6 @@ Plot.prototype.setZoomRange = function(range, nosync) {
 
     // If there are sub-series we should pull in that we haven't cached,
     // set requests for them and reprocess the zoom when complete
-    _fetchInvolvedSeries(range, function (fetched) {
-      if (fetched > 0)
-        self.setZoomRange(self.zoomRange, true);
-    });
 
     this.zoomRange = range;
     var newseries = this._buildSeries(range[0], range[1]);
@@ -1771,30 +1003,12 @@ Plot.prototype.setZoomRange = function(range, nosync) {
     // The highlight has the wrong range now that we mucked with the graph
     if (this.highlighted)
       this.showHighlight(this._highlightLoc, this._highlightWidth);
-
-    // Sync all other plots
-    if (!nosync)
-      for (var x in gZoomSyncPlots)
-        if (gZoomSyncPlots[x] != this)
-          gZoomSyncPlots[x].setZoomRange(zoomOut ? undefined : range, true);
 }
 
 // Takes two timestamps and builds a list of series based on this plot's axis
 // suitable for passing to flot - condensed to try to hit gMaxPoints.
-// Uses series returned by _getInvolvedSeries *if they are all downloaded*,
-// otherwise always uses overview data.
-// See comment about gFullData at top of file
 Plot.prototype._buildSeries = function(start, stop) {
   var self = this; // for closures
-  var involvedseries = _getInvolvedSeries([start, stop]);
-
-  // Don't use the involved series if they're not all downloaded
-  for (var x in involvedseries) {
-    if (!gFullData[involvedseries[x]]) {
-      involvedseries = false;
-      break;
-    }
-  }
 
   // Push a dummy null point at the beginning of the series to force the zoom to
   // start exactly there
@@ -1871,31 +1085,29 @@ Plot.prototype._buildSeries = function(start, stop) {
   }
 
   var buildinf;
-  var series;
+  var series = {};
   var ctime = -1;
   var count = 0;
 
-  var seriesdata = [];
-  if (!involvedseries) {
-    // Only one series, the overview data
-    seriesdata.push(gGraphData);
-  } else {
-    for (var i in involvedseries)
-      seriesdata.push(gFullData[involvedseries[i]]);
-  }
+  var testIDs = [gCurrentTestID];
+  for (var commitIndex in gData.commits) {
+    var commit = gData.commits[commitIndex];
+    for (var testIndex in testIDs) {
+      var testID = testIDs[testIndex];
+      if (!(testID in commit.results))
+        continue;
+      var result = commit.results[testID];
+      if (result.error.length)
+        continue;
 
-  for (var seriesindex in seriesdata) {
-    var sourceData = seriesdata[seriesindex];
-    for (var ind in sourceData['builds']) {
-      var b = sourceData['builds'][ind];
-      if (start !== undefined && b['time'] < start) continue;
-      if (stop !== undefined && b['time'] > stop) break;
+      if (start !== undefined && commit.time < start) continue;
+      if (stop !== undefined && commit.time > stop) break;
 
       var time;
       if (gQueryVars['evenspacing']) {
-        time = start + ind * (stop - start) / sourceData['builds'].length;
+        time = start + ind * (stop - start) / gData.commits.length;
       } else {
-        time = groupin(b['time']);
+        time = groupin(commit.time);
       }
 
       if (time != ctime) {
@@ -1909,30 +1121,23 @@ Plot.prototype._buildSeries = function(start, stop) {
       // Full series uses non-merged syntax, which is just build['revision']
       // but we might be using overview data and hence merged syntax
       // (firstrev, lastrev)
-      var rev = 'revision' in b ? b['revision'] : b['firstrev'];
-      var lrev = 'revision' in b ? b['revision'] : b['lastrev'];
-      var starttime = 'timerange' in b ? b['timerange'][0] : b['time'];
-      var endtime = 'timerange' in b ? b['timerange'][1] : b['time'];
-      count += 'count' in b ? b['count'] : 1;
+      var rev = commit.commit;
+      var starttime = commit.time;
+      var endtime = commit.time;
+      count++;
       if (!buildinf['firstrev']) {
         buildinf['firstrev'] = rev;
         buildinf['timerange'] = [ starttime, endtime ];
       } else {
-        buildinf['lastrev'] = lrev;
+        buildinf['lastrev'] = rev;
         buildinf['timerange'][1] = endtime;
       }
-      for (var axis in this.axis) {
+      //for (var axis in this.axis) {
+      var axis = testID; {
         if (!series[axis]) series[axis] = [];
         // Push all non-null datapoints onto list, pushdp() flattens
         // this list, finding its midpoint/min/max.
-        var val = axis in sourceData['series'] ? sourceData['series'][axis][ind] : null;
-        if (val && typeof(val) == "number") {
-          series[axis].push(val);
-        } else if (val) {
-          // [ min, median, max ] formatted datapoint (already condensed). Push
-          // it to series as [ median, count ] for flatten()
-          series[axis].push([ val[1], count ]);
-        }
+        series[axis].push(result.value);
       }
     }
   }
@@ -1940,14 +1145,46 @@ Plot.prototype._buildSeries = function(start, stop) {
 
   // Push a dummy null point at the end of the series to force the zoom to end
   // exactly there
+  builds.push({ time: start, timerange: [ start, start ] });
   builds.push({ time: stop, timerange: [ stop, stop ] });
   var seriesData = [];
   for (var axis in this.axis) {
+    data[axis].push([ start, null ]);
     data[axis].push([ stop, null ]);
     seriesData.push({ name: axis, label: this.axis[axis], data: data[axis], buildinfo: builds });
   }
 
   return seriesData;
+}
+
+// The zoomed build-detail view for builds we represent. Requires the tooltip be
+// visible and initialized with showBuild();
+Tooltip.prototype.buildDetail = function() {
+  // Switch to showing full timerange until unzoomed
+  var timerangeobj = this.content.find('.timerange');
+  if (timerangeobj.length) {
+    var timeobj = this.content.find('.timestamp');
+    timeobj.insertBefore(timerangeobj);
+    timeobj.addClass('fading').fadeOut(250);
+    timerangeobj.removeClass('fading').fadeIn(250);
+    this.onUnzoom(function () {
+      timerangeobj.insertBefore(timeobj);
+      timerangeobj.addClass('fading').fadeOut(250);
+      timeobj.removeClass('fading').fadeIn(250);
+    });
+  }
+
+  var self = this;
+  var build = this.build_set[this.build_index];
+
+  if ('lastrev' in build) {
+    // Build is a series. We need to make sure we have full res data to
+    // enumerate all the builds in this range.
+    window.open(gitRangeURL(build['firstrev'], build['lastrev']), '_blank');
+  } else {
+    // Only one build, just display memory view
+    window.open(gitURL(build['firstrev']), '_blank');
+  }
 }
 
 // Either zoom in on a datapoint or trigger a graph zoom or do nothing.
@@ -1963,13 +1200,13 @@ Plot.prototype.onClick = function(item) {
     // that contains builds through april 4th at 4pm. If your selection includes
     // that point, you expect to get all builds that that point represents
     var buildinfo = this.flot.getData()[0].buildinfo;
-    var firstbuild;
+    var firstbuild = 0;
     for (var i = 0; i < buildinfo.length; i++) {
       if (buildinfo[i]['time'] < this.highlightRange[0]) continue;
       if (buildinfo[i]['time'] > this.highlightRange[1]) break;
       if (!firstbuild) firstbuild = i;
     }
-    var buildrange = getBuildTimeRange(buildinfo[firstbuild], buildinfo[Math.min(i, buildinfo.length - 1)]);
+    var buildrange = getBuildTimeRange(buildinfo[firstbuild], buildinfo[Math.min(i-1, buildinfo.length - 1)]);
     var zoomrange = [];
     zoomrange[0] = Math.min(this.highlightRange[0], buildrange[0]);
     zoomrange[1] = Math.max(this.highlightRange[1], buildrange[1]);
@@ -2080,13 +1317,15 @@ Plot.prototype.showHighlight = function(location, width) {
   this._highlightLoc = location;
   this._highlightWidth = width;
 
-  var minZoomDays = 3;
   var xaxis = this.flot.getAxes().xaxis;
+/*
+  var minZoomDays = 3;
   if (xaxis.max - xaxis.min <= minZoomDays * 24 * 60 * 60) {
     this.highlighted = false;
     this.zoomSelector.stop().fadeTo(50, 0);
     return;
   }
+*/
 
   var off = this.flot.getPlotOffset();
   var left = location - width / 2;
@@ -2152,17 +1391,9 @@ Plot.prototype.onHover = function(item, pos) {
   this.hoveredItem = item;
 }
 
-//
-// Init. Load initial gGraphData, draw main page graphs
-//
-$(function () {
-  // Load graph data
-  // Allow selecting an alternate series
-  var series = 'areweslimyet';
-  if ('series' in gQueryVars && gQueryVars['series'].match('^[a-z0-9\-_]+$'))
-    series = gQueryVars['series'];
-  var url = '/data/' + series + '.json';
 
+$(function () {
+  var url = 'data.json';
   $.ajax({
     url: url,
     xhr: dlProgress,
@@ -2170,43 +1401,57 @@ $(function () {
       //
       // Graph data arrived, do additional processing and create plots
       //
-      gGraphData = data;
+      gData = data;
+
       // Calculate gDataRange.  The full range of gGraphData can have a number
       // of superfluous builds that have null for all series values we care
       // about. For instance, the mobile series all start Dec 2012, so all
       // builds prior to that are not useful in mobile mode.
+      gData.commits.sort(function(a, b) { return a.time-b.time; });
       gDataRange = [ null, null ];
-      for (var graph in gSeries) {
-        for (var series in gSeries[graph]) {
-          for (var ind = 0; ind < gGraphData['builds'].length; ind++) {
-            var val = gGraphData['series'][series][ind];
-            if (val instanceof Array)
-              val = val[1]; // [min, median, max] data
-            if (val !== null) {
-              var b = gGraphData['builds'][ind];
-              var buildstart = 'timerange' in b ? b['timerange'][0] : b['time'];
-              var buildstop = 'timerange' in b ? b['timerange'][1] : b['time'];
-              if (gDataRange[0] === null || buildstart < gDataRange[0])
-                gDataRange[0] = buildstart;
-              if (gDataRange[1] === null || buildstop > gDataRange[1])
-                gDataRange[1] = buildstop;
-            }
-          }
-        }
-        if (gDataRange[0] === null || gDataRange[1] === null) {
-          logError("No valid data in the full range!");
-        } else if (gDataRange[0] == gDataRange[1]) {
-          // Only one timestamp, bump the range out around it so flot does not
-          // have a heart attack
-          gDataRange[0] -= 60 * 60 * 24 * 7;
-          gDataRange[1] += 60 * 60 * 24 * 7;
-        }
+      for (var ind = 0; ind < gData.commits.length; ind++) {
+        var t = gData.commits[ind].time;
+        if (gDataRange[0] === null || t < gDataRange[0])
+          gDataRange[0] = t;
+        if (gDataRange[1] === null || t > gDataRange[1])
+          gDataRange[1] = t;
+      }
+      if (gDataRange[0] === null || gDataRange[1] === null) {
+        logError("No valid data in the full range!");
+      } else if (gDataRange[0] == gDataRange[1]) {
+        // Only one timestamp, bump the range out around it so flot does not
+        // have a heart attack
+        gDataRange[0] -= 60 * 60 * 24 * 7;
+        gDataRange[1] += 60 * 60 * 24 * 7;
       }
       logMsg("Useful data range is [ " + gDataRange + " ]");
-      $('#graphs h3').remove();
-      for (var graphname in gSeries) {
-        gZoomSyncPlots[graphname] = new Plot(graphname, $('#graphs'));
+
+      gCommits = {};
+      for (var ind = 0; ind < gData.commits.length; ind++) {
+        var commit = gData.commits[ind];
+        gCommits[commit.commit] = commit;
+        commit.results = {};
+        if (ind > 0) {
+          var prevCommit = gData.commits[ind-1];
+          prevCommit.next = commit;
+          commit.prev = prevCommit;
+        }
       }
+
+      gTests = {};
+      for (var ind = 0; ind < gData.tests.length; ind++) {
+        var test = gData.tests[ind];
+        gTests[test.id] = test;
+      }
+
+      for (var ind = 0; ind < gData.results.length; ind++) {
+        var result = gData.results[ind];
+        if (result.commit in gCommits)
+          gCommits[result.commit].results[result.testID] = result;
+      }
+
+      $('#graphs h3').remove();
+      gPlot = new Plot($('#graphs'));
     },
     error: function(xhr, status, error) {
       $('#graphs h3').text("An error occured while loading the graph data (" + url + ")");
