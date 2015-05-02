@@ -214,7 +214,7 @@ abstract class ProgramTest : Test
 	abstract @property string testDescription();
 
 	override @property string id() { return "program-%s-%s-%d".format(program.info.id, testID, program.info.iterations); }
-	override @property string name() { return "%s (%s)".format(testName, program.info.name); }
+	override @property string name() { return "%s - %s".format(program.info.name, testName); }
 	override @property string description() { return "The <span class='test-description'>%s</span> for the following program:<pre>%s</pre>".format(testDescription, encodeEntities(program.info.code)); }
 
 	override void reset() { program.reset(); }
@@ -285,7 +285,7 @@ class ProgramCompilePhaseTest(StatTest) : StatTest
 {
 	mixin GenerateContructorProxies;
 	override @property string stageID() { return "compile"; }
-	override @property string stageName() { return "Compilation"; }
+	override @property string stageName() { return "compilation"; }
 	override @property string stageDescription() { return "compilation (<tt>dmd -c " ~ dmdFlags.join(" ") ~ "</tt> invocation)"; }
 	override ExecutionStats getStats() { program.needCompiled(); return program.state.compilation; }
 }
@@ -294,7 +294,7 @@ class ProgramLinkPhaseTest(StatTest) : StatTest
 {
 	mixin GenerateContructorProxies;
 	override @property string stageID() { return "link"; }
-	override @property string stageName() { return "Linking"; }
+	override @property string stageName() { return "linking"; }
 	override @property string stageDescription() { return "linking (<tt>dmd " ~ program.objFile.baseName ~ "</tt> invocation)"; }
 	override ExecutionStats getStats() { program.needLinked(); return program.state.linking; }
 }
@@ -303,7 +303,7 @@ class ProgramExecutionPhaseTest(StatTest) : StatTest
 {
 	mixin GenerateContructorProxies;
 	override @property string stageID() { return "run"; }
-	override @property string stageName() { return "Execution"; }
+	override @property string stageName() { return "execution"; }
 	override @property string stageDescription() { return "test program execution"; }
 	override ExecutionStats getStats() { program.needExecuted(); return program.state.execution; }
 }
