@@ -1,0 +1,498 @@
+
+/*
+ * Copyright © 2012 Mozilla Corporation
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
+
+html, body {
+  background-color: white;
+  color: black;
+  font-family: Verdana, sans-serif;
+}
+
+#page-header {
+  margin-bottom: 30px;
+  margin-top: 30px;
+  margin-left: auto;
+  margin-right: auto;
+  font-size: 4em;
+  text-align: center;
+}
+
+#navbar {
+  position: relative; /* for abs positioned #dlProgress */
+  outline: none;
+  border: none;
+  border-bottom: 4px solid #EEE;
+  text-align: right;
+  margin: 0 100px 0 100px;
+}
+
+#navbar a, #navbar .inactive {
+  padding: 0 0.5em 0.2em 0.5em;
+  display: inline-block;
+  margin: 0 0.5em -4px 0.5em;
+  font-weight: bold;
+  border-bottom: 4px solid #CCC;
+}
+
+#navbar .inactive {
+  border-bottom: 4px solid #999;
+}
+
+#navbar a:hover {
+  border-bottom: 4px solid #555;
+}
+
+#header-slim {
+  font-family: QuicksandLight;
+  letter-spacing: -.10em;
+  text-shadow: none;
+}
+
+#dlProgress {
+  position: absolute;
+  left: 0;
+  bottom: 5px;
+  font-size: 50%;
+  color: grey;
+  text-align: left;
+}
+
+h2 {
+  margin-top: 2em;
+  margin-bottom: .5em;
+}
+
+h3 {
+  margin-top: 0;
+  margin-bottom: 0.2em;
+}
+
+a {
+  text-decoration: none;
+  outline: none;
+}
+
+a:link { color: #A22; }
+a:hover { color: #944; }
+a:active { color: #222; }
+a:visited { color: #393; }
+a:visited:hover { color: #494; }
+
+.graph {
+  width: 1000px;
+  height: 700px;
+}
+
+.graphContainer {
+  position: relative;
+}
+
+#graphs {
+  position: relative;
+  width: 1290px; /* .graph width + rhsContainer width */
+  width: -moz-calc(1000px + 20px + 18em);
+  margin: auto;
+}
+
+#graphs h2, #graphs h3 {
+  text-align: center;
+}
+
+.annotations {
+  position: absolute;
+  width: 100%;
+}
+
+.annotation {
+  position: absolute;
+  background-color: rgba(0,0,0,0.5);
+  padding: 5px 10px 5px 10px;
+  border-radius: 5px;
+  top: 5px;
+  color: #CCC;
+  font-family: sans-serif;
+  font-weight: bold;
+  z-index: 1;
+  user-select: none;
+  cursor: pointer;
+  cursor: help;
+}
+
+.annotation::after {
+  display: block;
+  content: "";
+  position: absolute;
+  left: 50%;
+  margin-left: -6px;
+  top: 100%;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid rgba(0,0,0,0.5);
+}
+
+.rhsContainer {
+  padding-top: 0.5em;
+  float: right;
+  padding-left: 20px;
+  width: 270px;
+  width: -moz-calc(18em);
+}
+
+#footer {
+  margin-top: 50px;
+}
+
+.legendContainer {
+  margin-top: 1.5em;
+}
+
+.legendLabel, .tickLabel {
+  color: #555;
+}
+
+.tick-release-name {
+  font-weight: bold;
+}
+
+.zoomSelector, .zoomOutButton,
+.zoomOutButton:link,
+.zoomOutButton:visited,
+.zoomOutButton:active,
+.zoomOutButton:hover,
+.zoomOutButton:visited:hover {
+  font-size: 80%;
+  color: #555;
+}
+
+.zoomSelector {
+  position: absolute;
+  padding-top: 11px;
+  opacity: 0; /* Start hidden */
+  background-color: rgba(220,220,220,0.5);
+  text-align: center;
+}
+
+.zoomOutButton {
+  float: left;
+}
+
+.zoomOutButton:hover {
+  text-decoration: underline;
+}
+
+.buildList {
+    text-align: center;
+}
+
+.buildListHead {
+    font-weight: bold;
+    color: #CCC;
+    padding: 5px;
+}
+
+.buildListSubHead {
+    color: #999;
+    font-size: 0.8em;
+    font-style: italic;
+}
+
+.buildListHead .small { font-size: 0.8em; }
+
+.buildListContent {
+    display: inline-block;
+    text-align: left;
+}
+
+.buildcrumb {
+  font-family: monospace;
+}
+
+.note, .small {
+  font-weight: normal;
+}
+
+.note { font-size: 80%; }
+.small { font-size: 80%; color: #666; }
+.error { color: #D99; }
+.success { color: #9D9; }
+
+/*
+ * FAQ
+ */
+body.faqPage {
+  padding: 0 100px 0 100px;
+}
+
+.faqPage #navbar { margin: 0; }
+
+.faqPage .toc>ul {
+  margin: 0 0 0 1em;
+  padding: 0;
+}
+.faqPage .toc {
+  float: right;
+  padding: 1em;
+  margin: 1em;
+  width: 30em;
+  border: 1px dashed #CCC;
+}
+
+/* Hide deeper than two levels by default */
+.faqPage .toc ul>li>ul>li>ul { display: none; }
+
+.faqPage h1 { text-align: center; }
+
+/*
+ * Status page (/status/)
+ */
+
+.statusPage {
+  text-align: center;
+}
+
+.statusTableBox {
+  width: 80%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.statusTable {
+  border-spacing: 5px;
+  width: 100%;
+  display: table;
+}
+
+.statusRow {
+  display: table-row;
+  margin: 5px;
+}
+
+.statusCell {
+  padding: 5px;
+  display: table-cell;
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+.statusRow.title {
+  text-align: center;
+  font-weight: bold;
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.statusPage #reqNote {
+  margin: 10px auto 10px auto;
+  display: inline-block;
+  background-color: #EEE;
+  border-radius: 5px;
+  padding: 10px 10px 0px 10px;
+}
+
+.statusPage #reqNote div {
+  padding-bottom: 10px
+}
+
+.statusPage #requestBuilds {
+  max-width: 800px;
+  margin: auto;
+}
+
+.statusPage .series {
+  display: block;
+  margin-top: 2em;
+}
+
+.statusPage .disabled {
+  color: grey;
+}
+
+.statusPage #requestBuilds input {
+  margin: 5px;
+}
+
+.statusPage .table {
+  max-width: 500px;
+  display: table;
+  margin: auto;
+}
+
+.modeTinderbox,.modeNightly,.modeCompile,.modeFTP { display: none; }
+
+.statusPage .row {
+  display: table-row;
+  text-align: center;
+}
+
+.statusPage .row>span,.statusPage .row>input,.statusPage .row>div {
+  display: table-cell;
+}
+
+.statusPage .row .note {
+    text-align: right;
+    padding: 0 1em 0 1em;
+}
+
+/*
+ * Tree views
+ */
+
+.treeNode {
+}
+
+.highlight {
+  background-color: rgba(150, 75, 75, 0.2);
+}
+
+.treeNodeTitle {
+  margin-left: 2em;
+  position: relative;
+  cursor: pointer;
+}
+
+.treeNodeTitle:hover .treeExpandClicker {
+  color: #FCC;
+}
+
+.treeNodeTitle .subtitle {
+  font-size: 0.8em;
+  color: #AAA;
+}
+
+.treeValue {
+  display: inline-block;
+  font-weight: bold;
+  color: #FEE;
+  margin-right: 0.5em;
+  font-size: 0.8em;
+}
+
+.treeValuePct {
+  display: inline-block;
+  color: #D55;
+  margin-right: 0.5em;
+  font-size: 0.6em;
+}
+
+.treeExpandClicker {
+  float: left;
+  vertical-align: middle;
+  font-family: monospace;
+  font-size: 1.2em;
+  width: 2em;
+  margin-left: -2em;
+  color: #E77;
+}
+
+.subtree {
+  margin-left: 2em;
+  border-left: 2px dashed #555;
+}
+
+/*
+ * Tooltip
+ */
+.tooltip {
+  font-family: sans-serif;
+  color: #EEE;
+  background-color: rgba(0, 0, 0, 0.95);
+  border-radius: 5px;
+  padding: 15px;
+  line-height: 1.4em;
+  text-align: left;
+  position: absolute;
+  width: 25em;
+  overflow: hidden;
+  z-index: 2;
+}
+
+.tooltip hr {
+  border: none;
+  border-bottom: 1px solid #444;
+}
+
+.tooltip .grey {
+  color: #777;
+  font-size: 0.8em;
+}
+
+.tooltip a:link { color: #E77; }
+.tooltip a:hover { color: #FCC; }
+.tooltip a:active { color: #FFF; }
+.tooltip a:visited { color: #AFA; }
+.tooltip a:visited:hover { color: #EFE; }
+
+.tooltip.zoomed {
+  overflow-y: auto;
+}
+
+.tooltip .hoverNote { color: #777; }
+
+.memoryTree {
+  margin-top: 5px;
+  margin-bottom: 15px;
+  padding: 5px;
+  background-color: rgba(100, 100, 100, 0.2);
+}
+
+.memoryTree .treeTitle {
+  padding: 5px;
+}
+
+.button {
+  color: #CCC;
+  font-family: monospace;
+  cursor: pointer;
+}
+
+.closeButton {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  font-size: 1.5em;
+}
+
+.backButton {
+  float: left;
+}
+
+.delta {
+  font-size: 0.8em;
+}
+
+/* Positive is bad! */
+.delta.pos { color: #E44; }
+.delta.neg { color: #4E4; }
+.delta.pos.significant { color: #F00; }
+.delta.neg.significant { color: #0F0; }
+.delta.significant { text-decoration: underline; }
+
+.tooltip h2, p {
+  line-height: inherit;
+  margin: inherit;
+}
+
+.tooltip .fading {
+  width: 100%;
+  position: absolute;
+}
+
+/*
+ * Quicksand font
+ *
+ * Generated by Font Squirrel (http://www.fontsquirrel.com) on March 18, 2012 09:54:47 PM America/New_York
+ */
+
+@font-face {
+    font-family: 'QuicksandLight';
+    src: url('/fonts/Quicksand_Light-webfont.eot');
+    src: url('/fonts/Quicksand_Light-webfont.eot?#iefix') format('embedded-opentype'),
+         url('/fonts/Quicksand_Light-webfont.woff') format('woff'),
+         url('/fonts/Quicksand_Light-webfont.ttf') format('truetype'),
+         url('/fonts/Quicksand_Light-webfont.svg#QuicksandLight') format('svg');
+    font-weight: normal;
+    font-style: normal;
+}
