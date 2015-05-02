@@ -72,7 +72,12 @@ void loadInfo()
 		testResults[commit][testID] = value;
 }
 
-alias LogEntry = DManager.LogEntry;
+struct Commit
+{
+	DManager.LogEntry logEntry;
+	alias logEntry this;
+	size_t id;
+}
 
 struct ScoreFactors
 {
@@ -94,11 +99,16 @@ struct ScoreFactors
 }
 ScoreFactors scoreFactors;
 
-LogEntry[] getToDo()
+Commit[] getToDo()
 {
 	log("Getting log...");
-	auto commits = d.getLog();
-	commits.reverse(); // oldest first
+	auto commits =
+		d.getLog()
+		.retro // oldest first
+		.enumerate
+		.map!(t => Commit(t[1], t[0]))
+		.array
+	;
 
 	log("Getting cache state...");
 	auto cacheState = d.getCacheState("origin/master", config.buildConfig);
@@ -178,7 +188,7 @@ LogEntry[] getToDo()
 	return index.map!(i => commits[i]).array();
 }
 
-bool prepareCommit(LogEntry commit)
+bool prepareCommit(Commit commit)
 {
 	debug log("Running tests for commit: " ~ commit.hash);
 	if (commit.hash in badCommits)
@@ -204,8 +214,8 @@ bool prepareCommit(LogEntry commit)
 		log("Error: " ~ e.toString());
 	}
 
-	query("INSERT OR REPLACE INTO [Commits] ([Commit], [Message], [Time], [Error]) VALUES (?, ?, ?, ?)")
-		.exec(commit.hash, commit.message.join("\n"), commit.time.toUnixTime, error);
+	query("INSERT OR REPLACE INTO [Commits] ([ID], [Commit], [Message], [Time], [Error]) VALUES (?, ?, ?, ?, ?)")
+		.exec(commit.id, commit.hash, commit.message.join("\n"), commit.time.toUnixTime, error);
 
 	if (error)
 	{
@@ -216,7 +226,7 @@ bool prepareCommit(LogEntry commit)
 	return true;
 }
 
-void runTests(LogEntry commit)
+void runTests(Commit commit)
 {
 	log("Preparing list of tests to run...");
 	Test[] testsToRun;
@@ -257,6 +267,7 @@ void saveJson(string target)
 	{
 		struct Commit
 		{
+			size_t id;
 			string commit, message;
 			long time;
 			bool error;
@@ -281,8 +292,8 @@ void saveJson(string target)
 	}
 	JsonData data;
 
-	foreach (string commit, string message, long time, int error; query("SELECT [Commit], [Message], [Time], [Error] FROM [Commits]").iterate())
-		data.commits ~= JsonData.Commit(commit, message, time, error != 0);
+	foreach (long id, string commit, string message, long time, int error; query("SELECT [ID], [Commit], [Message], [Time], [Error] FROM [Commits]").iterate())
+		data.commits ~= JsonData.Commit(id, commit, message, time, error != 0);
 	foreach (string testID, string commit, long value, string error; query("SELECT [TestID], [Commit], [Value], [Error] FROM [Results]").iterate())
 		data.results ~= JsonData.Result(testID, commit, value, error);
 	foreach (test; tests)
