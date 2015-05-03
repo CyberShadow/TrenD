@@ -19,16 +19,19 @@ void main(string[] args)
 
 	foreach (commit; commits)
 	{
+		log("Preparing commit: " ~ commit);
 		d.buildRev(commit, config.buildConfig);
 
 		long[] results;
 		string[] errors;
 
+		log("Resetting tests");
 		foreach (test; tests)
 			test.reset();
 
 		foreach (test; tests)
 		{
+			log("Running test " ~ test.id);
 			long result = 0; string error = null;
 			try
 				result = test.sample();
