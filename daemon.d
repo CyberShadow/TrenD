@@ -23,6 +23,7 @@ debug
 else
 	enum updateInterval = 5.minutes;
 enum idleDuration = 1.minutes;
+const jsonPath = "web/data/data.json.gz";
 
 void main()
 {
@@ -30,7 +31,7 @@ void main()
 	loadInfo();
 
 	log("Saving results...");
-	atomic!saveJson("data.json.gz");
+	atomic!saveJson(jsonPath);
 
 	while (true)
 	{
@@ -54,7 +55,7 @@ void main()
 		}
 
 		log("Saving results...");
-		atomic!saveJson("web/data/data.json.gz");
+		atomic!saveJson(jsonPath);
 
 		log("Idling...");
 		Thread.sleep(idleDuration);
