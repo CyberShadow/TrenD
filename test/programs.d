@@ -310,7 +310,7 @@ class ProgramStatTest(string field, Unit _unit, bool _exact, string _name, strin
 	mixin GenerateContructorProxies;
 
 	override @property string statID() { return "%s-%d".format(field.toLower(), program.info.iterations); }
-	override @property string statName() { return statName; }
+	override @property string statName() { return _name; }
 	override @property string statDescription() { return _description; }
 	override @property Unit unit() { return _unit; }
 	override @property bool exact() { return _exact; }
