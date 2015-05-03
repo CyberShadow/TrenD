@@ -808,7 +808,7 @@ function getPerBuildData(buildname, success, fail) {
 
 var gDateAxisThresholds = [
   { threshold : 720*24*60*60, init : function(d) { d.setMonth       (0); }, next : function(d) { d.setFullYear(d.getFullYear()+1); }},
-  { threshold :  40*24*60*60, init : function(d) { d.setDate        (1); }, next : function(d) { d.setMonth   (d.getMonth   ()+1); }},
+  { threshold :  30*24*60*60, init : function(d) { d.setDate        (1); }, next : function(d) { d.setMonth   (d.getMonth   ()+1); }},
 //{ threshold :  10*24*60*60, init : function(d) { d.setDate(d.getDate()-d.getDay()); }, next : function(d) { d.setDate(d.getDate()+7); }},
   { threshold :   1*24*60*60, init : function(d) { d.setHours       (0); }, next : function(d) { d.setDate    (d.getDate    ()+1); }},
   { threshold :      1*60*60, init : function(d) { d.setMinutes     (0); }, next : function(d) { d.setHours   (d.getHours   ()+1); }},
