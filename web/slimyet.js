@@ -166,7 +166,7 @@ var gCommits = {};
 var gTests = {};
 
 // Current test
-var gCurrentTestID = 'program-hello-binarysize-10';
+var gCurrentTestID = 'program-hello-binarysize';
 
 // Our plot
 var gPlot;
