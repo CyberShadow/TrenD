@@ -11,6 +11,7 @@ import std.typecons;
 import ae.sys.d.manager;
 import ae.sys.file;
 import ae.utils.json;
+import ae.utils.time;
 
 import common;
 import test;
@@ -175,6 +176,13 @@ LogEntry[] getToDo()
 				bestIntermediaryScore = 0;
 			}
 		}
+	}
+
+	debug(TODO)
+	{
+		auto f = File("todolist.txt", "wb");
+		foreach (i, commit; commits)
+			f.writefln("%s %s %5d", commit.hash, commit.time.formatTime!`Y-m-d H:i:s`, scores[i]);
 	}
 
 	auto index = new size_t[commits.length];
