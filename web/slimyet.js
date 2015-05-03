@@ -964,8 +964,8 @@ Plot.prototype._buildSeries = function(start, stop) {
         var diff = builds.length ? buildinf['timerange'][0] -
                                    builds[builds.length - 1]['timerange'][1]
                                  : 0;
-        if (diff < gDisjointTime)
-          return;
+        //if (diff < gDisjointTime)
+        //  return;
       }
       // Add to series
       builds.push(buildinf);
@@ -1011,11 +1011,13 @@ Plot.prototype._buildSeries = function(start, stop) {
     var commit = gData.commits[commitIndex];
     for (var testIndex in testIDs) {
       var testID = testIDs[testIndex];
-      if (!(testID in commit.results))
-        continue;
-      var result = commit.results[testID];
-      if (result.error.length)
-        continue;
+
+      var value = null;
+      if (testID in commit.results) {
+        var result = commit.results[testID];
+        if (!result.error.length)
+          value = result.value;
+      }
 
       if (start !== undefined && commit.time < start) continue;
       if (stop !== undefined && commit.time > stop) break;
@@ -1054,7 +1056,7 @@ Plot.prototype._buildSeries = function(start, stop) {
         if (!series[axis]) series[axis] = [];
         // Push all non-null datapoints onto list, pushdp() flattens
         // this list, finding its midpoint/min/max.
-        series[axis].push(result.value);
+        series[axis].push(value);
       }
     }
   }
