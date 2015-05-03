@@ -1418,6 +1418,6 @@ function selectTest(testID) {
   gCurrentTestID = testID;
   gPlot.updateData();
   $('#test-id').text(testID);
-  $('#test-name').text(gTests[testID].name.replace(' - ', ' – '));
+  $('#test-name').text(gTests[testID].name.replace(/ - /g, ' – '));
   $('#test-description').html(gTests[testID].description);
 }
