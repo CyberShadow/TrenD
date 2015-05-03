@@ -25,6 +25,9 @@ void main(string[] args)
 		string[] errors;
 
 		foreach (test; tests)
+			test.reset();
+
+		foreach (test; tests)
 		{
 			long result = 0; string error = null;
 			try
