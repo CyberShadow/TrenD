@@ -62,7 +62,10 @@ const ProgramInfo[] programs = [
 
 struct ExecutionStats
 {
-	long realTime, userTime, kernelTime, maxRSS;
+	long realTime   = long.max;
+	long userTime   = long.max;
+	long kernelTime = long.max;
+	long maxRSS     = long.max;
 }
 
 final class Program
@@ -96,79 +99,85 @@ final class Program
 			foreach (dependency; dependencies)
 				dependency.need();
 			if (runs > this.runs)
+				run(runs - this.runs, &measureRusage);
+			else
+			if (outputFile && !outputFile.exists)
 			{
-				run(runs - this.runs);
-				this.runs = runs;
+				// a failure in a previous run call might have caused
+				// outputFile to get deleted but not recreated
+				run(1, &measureRusage);
 			}
 		}
 
-		void run(int iterations)
+		void run(int iterations, void delegate() runner)
 		{
 			auto oldPath = environment["PATH"];
 			scope(exit) environment["PATH"] = oldPath;
 			environment["PATH"] = buildPath(d.buildDir, "bin").absolutePath() ~ pathSeparator ~ oldPath;
 			log("PATH=" ~ environment["PATH"]);
 
-			if (runs == 0)
-				foreach (ref n; bestStats.tupleof)
-					n = typeof(n).max;
-
 			foreach (iteration; 0..iterations)
 			{
 				if (outputFile && outputFile.exists)
 					outputFile.remove();
 
-				log("Running program: %s".format(command));
-				auto pid = spawnProcess(command, stdin, stdout, stderr, null, std.process.Config.none, srcDir);
-
-				ExecutionStats iterationStats;
-				StopWatch sw;
-				sw.start();
-
-				version (Windows)
-				{
-					// Just measure something for some draft results
-					auto status = wait(pid);
-					enforce(status == 0, "%s failed with status %s".format(command, status));
-				}
-				else
-				{
-					rusage rusage;
-
-					while (true)
-					{
-						int status;
-						auto check = wait4(pid.osHandle, &status, 0, &rusage);
-						if (check == -1)
-						{
-							errnoEnforce(errno == EINTR, "Unexpected wait3 interruption");
-							continue;
-						}
-
-						enforce(!WIFSIGNALED(status), "Program failed with signal %s".format(status));
-						if (!WIFEXITED(status))
-							continue;
-
-						enforce(WEXITSTATUS(status) == 0, "Program failed with status %s".format(status));
-						break;
-					}
-
-					long nsecs(timeval tv) { return tv.tv_sec * 1_000_000_000L + tv.tv_usec * 1_000L; }
-
-					iterationStats.userTime   = nsecs(rusage.ru_utime);
-					iterationStats.kernelTime = nsecs(rusage.ru_stime);
-					iterationStats.maxRSS     = rusage.ru_maxrss * 1024L;
-				}
-
-				sw.stop();
-				iterationStats.realTime = sw.peek().hnsecs * 100L;
+				runner();
 
 				if (outputFile)
 					enforce(outputFile.exists, "Program did not create output file " ~ outputFile);
-
-				foreach (i, n; bestStats.tupleof)
-					bestStats.tupleof[i] = min(bestStats.tupleof[i], iterationStats.tupleof[i]);
 			}
+		}
+
+		final void measureRusage()
+		{
+			log("Running program: %s".format(command));
+			auto pid = spawnProcess(command, stdin, stdout, stderr, null, std.process.Config.none, srcDir);
+
+			ExecutionStats iterationStats;
+			StopWatch sw;
+			sw.start();
+
+			version (Windows)
+			{
+				// Just measure something for some draft results
+				auto status = wait(pid);
+				enforce(status == 0, "%s failed with status %s".format(command, status));
+			}
+			else
+			{
+				rusage rusage;
+
+				while (true)
+				{
+					int status;
+					auto check = wait4(pid.osHandle, &status, 0, &rusage);
+					if (check == -1)
+					{
+						errnoEnforce(errno == EINTR, "Unexpected wait3 interruption");
+						continue;
+					}
+
+					enforce(!WIFSIGNALED(status), "Program failed with signal %s".format(status));
+					if (!WIFEXITED(status))
+						continue;
+
+					enforce(WEXITSTATUS(status) == 0, "Program failed with status %s".format(status));
+					break;
+				}
+
+				long nsecs(timeval tv) { return tv.tv_sec * 1_000_000_000L + tv.tv_usec * 1_000L; }
+
+				iterationStats.userTime   = nsecs(rusage.ru_utime);
+				iterationStats.kernelTime = nsecs(rusage.ru_stime);
+				iterationStats.maxRSS     = rusage.ru_maxrss * 1024L;
+			}
+
+			sw.stop();
+			iterationStats.realTime = sw.peek().hnsecs * 100L;
+
+			foreach (i, n; bestStats.tupleof)
+				bestStats.tupleof[i] = min(bestStats.tupleof[i], iterationStats.tupleof[i]);
+			runs++;
 		}
 	}
 
@@ -177,9 +186,9 @@ final class Program
 		override @property Target[] dependencies() { return null; }
 		override @property string[] command() { assert(false); }
 		override @property string outputFile() { assert(false); }
-		override void run(int runs)
+		override void run(int runs, void delegate() runner)
 		{
-			assert(runs==1);
+			assert(runs==1 && runner is &measureRusage);
 			if (srcDir.exists)
 				srcDir.rmdirRecurse();
 			srcDir.mkdir();
@@ -231,7 +240,7 @@ abstract class ProgramTest : Test
 	abstract @property string testName();
 	abstract @property string testDescription();
 
-	override @property string id() { return "program-%s-%s-%d".format(program.info.id, testID, program.info.iterations); }
+	override @property string id() { return "program-%s-%s".format(program.info.id, testID); }
 	override @property string name() { return "%s - %s".format(program.info.name, testName); }
 	override @property string description() { return "The <span class='test-description'>%s</span> for the following program:<pre>%s</pre>".format(testDescription, encodeEntities(program.info.code)); }
 
@@ -294,7 +303,7 @@ class ProgramStatTest(string field, Unit _unit, bool _exact, string _name, strin
 {
 	mixin GenerateContructorProxies;
 
-	override @property string statID() { return field.toLower(); }
+	override @property string statID() { return "%s-%d".format(field.toLower(), program.info.iterations); }
 	override @property string statName() { return statName; }
 	override @property string statDescription() { return _description; }
 	override @property Unit unit() { return _unit; }
@@ -305,7 +314,9 @@ class ProgramStatTest(string field, Unit _unit, bool _exact, string _name, strin
 		auto target = getTarget();
 		target.need(program.info.iterations);
 		auto stats = target.bestStats;
-		return mixin("stats." ~ field);
+		auto value = mixin("stats." ~ field);
+		enforce(value != typeof(value).max, "Value can't be measured");
+		return value;
 	}
 }
 
