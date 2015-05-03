@@ -159,12 +159,12 @@ a:visited:hover { color: #494; }
   font-weight: bold;
 }
 
-.zoomSelector, .zoomOutButton,
-.zoomOutButton:link,
-.zoomOutButton:visited,
-.zoomOutButton:active,
-.zoomOutButton:hover,
-.zoomOutButton:visited:hover {
+.zoomSelector, #controls a,
+#controls a:link,
+#controls a:visited,
+#controls a:active,
+#controls a:hover,
+#controls a:visited:hover {
   font-size: 80%;
   color: #555;
 }
@@ -178,7 +178,6 @@ a:visited:hover { color: #494; }
 }
 
 .zoomOutButton {
-  float: left;
 }
 
 .zoomOutButton:hover {
@@ -493,8 +492,12 @@ body.faqPage {
   margin: 1em 100px;
 }
 
-#zoomOutButtonContainer {
+#controls-right {
   float: right;
+}
+
+#controls-right > * {
+  margin-left: 2em;
 }
 
 #test-info {
