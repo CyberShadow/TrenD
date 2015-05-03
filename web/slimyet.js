@@ -1467,6 +1467,7 @@ $(function () {
 
       $('#graphs h3').remove();
       gPlot = new Plot($('#graphs'));
+      selectTest(gCurrentTestID);
     },
     error: function(xhr, status, error) {
       $('#graphs h3').text("An error occured while loading the graph data (" + url + ")");
@@ -1484,7 +1485,14 @@ $(function () {
   });
 
   $('#testSelector').on('change keyup', function() {
-    gCurrentTestID = this.value;
-    gPlot.updateData();
+    selectTest(this.value);
   });
 });
+
+function selectTest(testID) {
+  gCurrentTestID = testID;
+  gPlot.updateData();
+  $('#test-id').text(testID);
+  $('#test-name').text(gTests[testID].name);
+  $('#test-description').html(gTests[testID].description);
+}
