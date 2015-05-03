@@ -1,0 +1,7 @@
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME}.gz -s
+RewriteRule ^(.+) $1.gz [L]
+
+RewriteRule \.json\.gz$ - [T=application/json]
+
+AddEncoding x-gzip .gz
