@@ -106,6 +106,7 @@ final class Program
 			{
 				// a failure in a previous run call might have caused
 				// outputFile to get deleted but not recreated
+				log("Recreating " ~ outputFile);
 				run(1, &measureRusage);
 			}
 		}
@@ -186,14 +187,18 @@ final class Program
 	{
 		override @property Target[] dependencies() { return null; }
 		override @property string[] command() { assert(false); }
-		override @property string outputFile() { assert(false); }
+		override @property string outputFile() { return srcFile; }
 		override void run(int runs, void delegate() runner)
 		{
 			assert(runs==1 && runner is &measureRusage);
 			if (srcDir.exists)
+			{
+				log("Cleaning up " ~ srcDir);
 				srcDir.rmdirRecurse();
+			}
 			srcDir.mkdir();
 			std.file.write(srcFile, info.code);
+			this.runs = 1;
 		}
 	}
 
@@ -338,7 +343,7 @@ class ProgramMemoryUsageTest : ProgramPhaseTest
 	override @property Unit unit() { return Unit.bytes; }
 	override @property bool exact() { return true; }
 
-	@property string outputFile() { return program.srcDir.buildPath("massif.out"); }
+	@property string massifLogFile() { return program.srcDir.buildPath("massif.out"); }
 
 	override long sample()
 	{
@@ -348,7 +353,7 @@ class ProgramMemoryUsageTest : ProgramPhaseTest
 		target.run(1, &runMassif);
 
 		long peakSize = 0;
-		foreach (line; File(outputFile).byLine)
+		foreach (line; File(massifLogFile).byLine)
 			if (line.startsWith("mem_heap_B="))
 			{
 				auto size = line.findSplit("=")[2].strip().to!long;
@@ -361,9 +366,9 @@ class ProgramMemoryUsageTest : ProgramPhaseTest
 	final void runMassif()
 	{
 		auto target = getTarget();
-		if (outputFile.exists)
-			outputFile.remove();
-		auto command = commandPrefix ~ ["--massif-out-file=" ~ outputFile.absolutePath] ~ target.command;
+		if (massifLogFile.exists)
+			massifLogFile.remove();
+		auto command = commandPrefix ~ ["--massif-out-file=" ~ massifLogFile.absolutePath] ~ target.command;
 		log("Running program: %s".format(command));
 		auto status = spawnProcess(command, stdin, stdout, stderr, null, std.process.Config.none, program.srcDir).wait();
 		enforce(status == 0, "Valgrind failed");
