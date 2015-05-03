@@ -54,7 +54,7 @@ void main()
 		}
 
 		log("Saving results...");
-		atomic!saveJson("data.json.gz");
+		atomic!saveJson("web/data.json.gz");
 
 		log("Idling...");
 		Thread.sleep(idleDuration);
