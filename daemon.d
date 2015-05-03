@@ -17,7 +17,7 @@ import common;
 import test;
 
 bool[string] badCommits;
-long[string][string] testResults;
+long[string][string] testResults; // testResults[commit.hash][test.id] = value
 
 debug
 	enum updateInterval = 1.minutes;
@@ -134,13 +134,15 @@ LogEntry[] getToDo()
 	size_t[string] commitLookup = commits.map!(logEntry => logEntry.hash).enumerate.map!(t => tuple(t[1], t[0])).assocArray;
 	auto testResultArray = new long[commits.length];
 
+	auto diffPoints = new int[commits.length];
+
 	foreach (test; tests)
 	{
 		testResultArray[] = 0;
-		if (test.id in testResults)
-			foreach (commit, value; testResults[test.id])
+		foreach (commit, results; testResults)
+			if (auto pvalue = test.id in results)
 				if (auto pindex = commit in commitLookup)
-					testResultArray[*pindex] = value;
+					testResultArray[*pindex] = *pvalue;
 
 		size_t lastIndex = 0;
 		long lastValue = 0;
@@ -151,7 +153,7 @@ LogEntry[] getToDo()
 		{
 			if (value == 0)
 			{
-				scores[i] += scoreFactors.untested;
+				diffPoints[i] += scoreFactors.untested;
 
 				if (bestIntermediaryScore < scores[i])
 				{
@@ -164,10 +166,12 @@ LogEntry[] getToDo()
 				if (lastIndex && bestIntermediaryIndex)
 				{
 					assert(lastValue);
-					auto points = cast(int)(scoreFactors.diffMax * min(value, lastValue) / max(value, lastValue));
+					auto v0 = min(value, lastValue);
+					auto v1 = max(value, lastValue);
+					auto points = cast(int)(scoreFactors.diffMax * (v1-v0) / v1);
 					if (test.exact)
 						points *= scoreFactors.diffExact;
-					scores[bestIntermediaryIndex] += points;
+					diffPoints[bestIntermediaryIndex] += points;
 				}
 
 				lastIndex = i;
@@ -177,6 +181,8 @@ LogEntry[] getToDo()
 			}
 		}
 	}
+	foreach (i, points; diffPoints)
+		scores[i] += points;
 
 	debug(TODO)
 	{
