@@ -1545,6 +1545,19 @@ $(function () {
   $('#testSelector').on('change keyup', function() {
     selectTest(this.value);
   });
+
+  var adjectives = ['slim', 'fast', 'lean'];
+  var adjectiveIndex = 0;
+  function rotateAdjective() {
+    $('#header-slim').html(adjectives[adjectiveIndex] + '<br>' + adjectives[(adjectiveIndex+1)%3]);
+    $('#header-slim').css('scrollTop', 100);
+    $('#header-slim').animate({
+      scrollTop: 100//$(".middle").offset().top
+    }, 1000);
+    adjectiveIndex = (adjectiveIndex+1)%3;
+  }
+  //setInterval(rotateAdjective, 2000);
+  $('#page-header').mouseenter(rotateAdjective);
 });
 
 function selectTest(testID) {

@@ -518,3 +518,16 @@ body.faqPage {
   text-align: center;
   font-size: 75%;
 }
+
+#page-header img {
+  vertical-align: text-bottom;
+  padding-bottom: 0.1em;
+}
+
+#header-slim {
+  display: inline-block;
+  overflow: hidden;
+  height: 1.2em;
+  width: 1.8em;
+  vertical-align: text-bottom;
+}
