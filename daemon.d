@@ -91,7 +91,8 @@ struct ScoreFactors
 	int untested    =  100; /// points per test
 
 	/// Prefer commits between big differences in test results:
-	int diffMax     = 2000; /// max points (for 100% difference)
+	int diffMax     =  500; /// max points (for 100% difference)
+	int diffExact   =   10; /// multiplier for "exact" tests
 }
 ScoreFactors scoreFactors;
 
@@ -163,6 +164,8 @@ LogEntry[] getToDo()
 				{
 					assert(lastValue);
 					auto points = cast(int)(scoreFactors.diffMax * min(value, lastValue) / max(value, lastValue));
+					if (test.exact)
+						points *= scoreFactors.diffExact;
 					scores[bestIntermediaryIndex] += points;
 				}
 
