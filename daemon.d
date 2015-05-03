@@ -54,7 +54,7 @@ void main()
 		}
 
 		log("Saving results...");
-		atomic!saveJson("web/data.json.gz");
+		atomic!saveJson("web/data/data.json.gz");
 
 		log("Idling...");
 		Thread.sleep(idleDuration);
@@ -291,6 +291,7 @@ void saveJson(string target)
 	auto json = data.toJson();
 	import ae.utils.gzip, ae.sys.data;
 
+	ensurePathExists(target);
 	auto f = File(target, "wb");
 	foreach (datum; compress([Data(json)], ZlibOptions(9)))
 		f.rawWrite(datum.contents);

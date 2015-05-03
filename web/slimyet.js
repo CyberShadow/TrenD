@@ -1461,7 +1461,7 @@ Plot.prototype.onHover = function(item, pos) {
 
 
 $(function () {
-  var url = 'data.json';
+  var url = 'data/data.json';
   $.ajax({
     url: url,
     xhr: dlProgress,

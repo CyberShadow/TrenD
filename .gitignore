@@ -9,5 +9,4 @@
 
 /data/
 /logs/
-/web/data.json
-/web/data.json.gz
+/web/data/
