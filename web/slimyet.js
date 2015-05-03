@@ -1548,12 +1548,15 @@ $(function () {
 
   var adjectives = ['slim', 'fast', 'lean'];
   var adjectiveIndex = 0;
+  var rotating = false;
   function rotateAdjective() {
+    if (rotating) return;
+    rotating = true;
     $('#header-slim').html(adjectives[adjectiveIndex] + '<br>' + adjectives[(adjectiveIndex+1)%3]);
     $('#header-slim').css('scrollTop', 100);
     $('#header-slim').animate({
       scrollTop: 100//$(".middle").offset().top
-    }, 1000);
+    }, 1000, function() { rotating = false });
     adjectiveIndex = (adjectiveIndex+1)%3;
   }
   //setInterval(rotateAdjective, 2000);
