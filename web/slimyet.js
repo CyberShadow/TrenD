@@ -946,7 +946,7 @@ function Plot(appendto) {
         ticks: function(axis) {
           // If you zoom in and there are no points to show, axis.max will be
           // very small.  So let's say that we'll always graph at least 32mb.
-          var minMax = gTests[gCurrentTestID].unit == 'bytes' ? 1 * 1024 * 1024 : 0;
+          var minMax = gTests[gCurrentTestID].unit == 'bytes' ? 1 * 1024 : 1000;
           var axisMax = Math.max(axis.max, minMax);
 
           var approxNumTicks = 10;
