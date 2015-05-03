@@ -826,7 +826,7 @@ function Plot(appendto) {
       legend: {
         container: this.legendContainer
       },
-      colors: name.indexOf('Memory') != -1 ? gDefaultColors : gDarkColorsFirst
+      colors: gDarkColorsFirst
     }
   );
 
@@ -932,8 +932,10 @@ Plot.prototype._buildSeries = function(start, stop) {
   var builds = [ { time: start, timerange: [ start, start ] } ];
   var data = {};
 
-  for (var axis in this.axis)
-    data[axis] = [ [ start, null ] ];
+  var testIDs = [gCurrentTestID];
+  testIDs.forEach(function(axis) {
+    data[gCurrentTestID] = [ [ start, null ] ];
+  });
 
   // Grouping distance
   var groupdist = gMaxPoints == 0 ? 0 : Math.round((stop - start) / gMaxPoints);
@@ -951,7 +953,7 @@ Plot.prototype._buildSeries = function(start, stop) {
       // Flatten the axis first and determine if this is a null build
       var flat = {};
       var nullbuild = true;
-      for (var axis in self.axis) {
+      for (var axis in series) {
         flat[axis] = flatten(series[axis]);
         if (flat[axis] !== null)
           nullbuild = false;
@@ -967,9 +969,9 @@ Plot.prototype._buildSeries = function(start, stop) {
       }
       // Add to series
       builds.push(buildinf);
-      for (axis in self.axis) {
+      testIDs.forEach(function(axis) {
         data[axis].push([ +buildinf['time'], flat[axis] ]);
-      }
+      });
     }
   }
   function groupin(timestamp) {
@@ -1005,7 +1007,6 @@ Plot.prototype._buildSeries = function(start, stop) {
   var ctime = -1;
   var count = 0;
 
-  var testIDs = [gCurrentTestID];
   for (var commitIndex in gData.commits) {
     var commit = gData.commits[commitIndex];
     for (var testIndex in testIDs) {
@@ -1064,7 +1065,7 @@ Plot.prototype._buildSeries = function(start, stop) {
   builds.push({ time: start, timerange: [ start, start ] });
   builds.push({ time: stop, timerange: [ stop, stop ] });
   var seriesData = [];
-  for (var axis in this.axis) {
+  for (var axis in data) {
     data[axis].push([ start, null ]);
     data[axis].push([ stop, null ]);
     seriesData.push({ name: axis, label: this.axis[axis], data: data[axis], buildinfo: builds });
