@@ -806,6 +806,16 @@ function getPerBuildData(buildname, success, fail) {
   }
 }
 
+var gDateAxisThresholds = [
+  { threshold : 720*24*60*60, init : function(d) { d.setMonth       (0); }, next : function(d) { d.setFullYear(d.getFullYear()+1); }},
+  { threshold :  40*24*60*60, init : function(d) { d.setDate        (1); }, next : function(d) { d.setMonth   (d.getMonth   ()+1); }},
+//{ threshold :  10*24*60*60, init : function(d) { d.setDate(d.getDate()-d.getDay()); }, next : function(d) { d.setDate(d.getDate()+7); }},
+  { threshold :   1*24*60*60, init : function(d) { d.setHours       (0); }, next : function(d) { d.setDate    (d.getDate    ()+1); }},
+  { threshold :      1*60*60, init : function(d) { d.setMinutes     (0); }, next : function(d) { d.setHours   (d.getHours   ()+1); }},
+  { threshold :         1*60, init : function(d) { d.setSeconds     (0); }, next : function(d) { d.setMinutes (d.getMinutes ()+1); }},
+  { threshold :            1, init : function(d) { d.setMilliseconds(0); }, next : function(d) { d.setSeconds (d.getSeconds ()+1); }},
+];
+
 //
 // Plot functions
 //
@@ -862,6 +872,7 @@ function Plot(appendto) {
         ticks: function(axis) {
           var points = [];
           var range = axis.max - axis.min;
+          /*
           var prevdate = 0;
           for (var i = 0; i < gReleases.length; i++) {
             var date = gReleases[i].date;
@@ -893,6 +904,24 @@ function Plot(appendto) {
 
           points.push(roundDayUp(axis.min));
           points.push(roundDayDown(axis.max));
+          */
+          var d = new Date(roundDayDown(axis.min)*1000);
+          for (var ind in gDateAxisThresholds) {
+            var t = gDateAxisThresholds[ind];
+            if (range > t.threshold) {
+              for (var ind2 in gDateAxisThresholds)
+                if (ind2 >= ind)
+                  gDateAxisThresholds[ind2].init(d);
+              while (d.getTime()/1000 < axis.max) {
+                var u = roundDayDown(d.getTime()/1000);
+                if (u > axis.min) {
+                  points.push(u);
+                }
+                t.next(d);
+              }
+              break;
+            }
+          }
 
           return points;
         },
