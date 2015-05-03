@@ -2,6 +2,7 @@ module test.programs;
 
 import std.algorithm;
 import std.array;
+import std.conv;
 import std.datetime;
 import std.exception;
 import std.file;
@@ -323,7 +324,51 @@ class ProgramStatTest(string field, Unit _unit, bool _exact, string _name, strin
 alias ProgramRealTimeTest    = ProgramStatTest!("realTime"  , Unit.nanoseconds, false, "real time"  , "total real (elapsed) time spent");
 alias ProgramUserTimeTest    = ProgramStatTest!("userTime"  , Unit.nanoseconds, false, "user time"  , "total user time (CPU time spent in userspace) spent");
 alias ProgramKernelTimeTest  = ProgramStatTest!("kernelTime", Unit.nanoseconds, false, "kernel time", "total kernel time (CPU time spent in the kernel) spent");
-alias ProgramMemoryUsageTest = ProgramStatTest!("maxRSS"    , Unit.bytes      , true , "max RSS"    , "peak RSS (resident set size memory usage) used");
+//alias ProgramMemoryUsageTest = ProgramStatTest!("maxRSS"    , Unit.bytes      , true , "max RSS"    , "peak RSS (resident set size memory usage) used");
+
+class ProgramMemoryUsageTest : ProgramPhaseTest
+{
+	mixin GenerateContructorProxies;
+
+	static const string[] commandPrefix = ["valgrind", "--tool=massif", "--pages-as-heap=yes"];
+
+	override @property string statID() { return "massif"; }
+	override @property string statName() { return "peak heap size"; }
+	override @property string statDescription() { return "peak heap size (as reported by <tt>" ~ commandPrefix.join(" ") ~ "</tt>)"; }
+	override @property Unit unit() { return Unit.bytes; }
+	override @property bool exact() { return true; }
+
+	@property string outputFile() { return program.srcDir.buildPath("massif.out"); }
+
+	override long sample()
+	{
+		enforce(!isVersion!"Windows", "Valgrind can't run on Windows");
+		auto target = getTarget();
+		target.need(1); // dependencies, and ensure it works uninstrumented
+		target.run(1, &runMassif);
+
+		long peakSize = 0;
+		foreach (line; File(outputFile).byLine)
+			if (line.startsWith("mem_heap_B="))
+			{
+				auto size = line.findSplit("=")[2].strip().to!long;
+				if (peakSize < size)
+					peakSize = size;
+			}
+		return peakSize;
+	}
+
+	final void runMassif()
+	{
+		auto target = getTarget();
+		if (outputFile.exists)
+			outputFile.remove();
+		auto command = commandPrefix ~ ["--massif-out-file=" ~ outputFile.absolutePath] ~ target.command;
+		log("Running program: %s".format(command));
+		auto status = spawnProcess(command, stdin, stdout, stderr, null, std.process.Config.none, program.srcDir).wait();
+		enforce(status == 0, "Valgrind failed");
+	}
+}
 
 class ProgramCompilePhaseTest(StatTest) : StatTest
 {
