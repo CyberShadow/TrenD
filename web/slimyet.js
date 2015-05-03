@@ -218,10 +218,13 @@ function mkDelta(mem, lastmem) {
   var delta = mem - lastmem;
   var obj = $.new('span').addClass('delta');
   if (delta < 0) {
-    obj.text('Δ -'+formatBytes(-delta));
+    obj.text('Δ -'+formatUnit(-delta));
     obj.addClass('neg');
+  } else if (delta == 0) {
+    obj.text('Δ '+formatUnit(delta));
+    obj.addClass('equ');
   } else {
-    obj.text('Δ '+formatBytes(delta));
+    obj.text('Δ '+formatUnit(delta));
     obj.addClass('pos');
   }
   if (Math.abs(delta) / mem > 0.02)
@@ -272,16 +275,37 @@ function prettyFloat(aFloat) {
 // Takes a int number of bytes, converts to appropriate units (B/KiB/MiB/GiB),
 // returns a prettyFloat()'d string
 // formatBytes(923044592344234) -> "859,652.27GiB"
-function formatBytes(raw) {
-  if (raw / 1024 < 2) {
+function formatBytes(raw, ref) {
+  if (ref === undefined) ref=raw;
+  if (ref / 1024 < 2) {
     return prettyFloat(raw) + "B";
-  } else if (raw / Math.pow(1024, 2) < 2) {
+  } else if (ref / Math.pow(1024, 2) < 2) {
     return prettyFloat(raw / 1024) + "KiB";
-  } else if (raw / Math.pow(1024, 3) < 2) {
+  } else if (ref / Math.pow(1024, 3) < 2) {
     return prettyFloat(raw / Math.pow(1024, 2)) + "MiB";
   } else {
     return prettyFloat(raw / Math.pow(1024, 3)) + "GiB";
   }
+}
+
+// Takes a int number of nanoseconds, converts to appropriate units (ns/μs/ms/s),
+// returns a prettyFloat()'d string
+function formatTime(raw, ref) {
+  if (ref === undefined) ref=raw;
+  if (ref / 1000 < 2) {
+    return prettyFloat(raw) + "ns";
+  } else if (ref / Math.pow(1000, 2) < 2) {
+    return prettyFloat(raw / 1000) + "μs";
+  } else if (ref / Math.pow(1000, 3) < 2) {
+    return prettyFloat(raw / Math.pow(1000, 2)) + "ms";
+  } else {
+    return prettyFloat(raw / Math.pow(1000, 3)) + "s";
+  }
+}
+
+function formatUnit(raw, unit, ref) {
+  if (!unit) unit = gTests[gCurrentTestID].unit;
+  return unit=='bytes' ? formatBytes(raw, ref) : formatTime(raw, ref);
 }
 
 // Pass to progress on $.ajax to show the progress div for this request
@@ -466,7 +490,7 @@ Tooltip.prototype.showBuild = function(label, series, buildset, buildindex, seri
   //this.append($.new('h3').text(label));
   // Build link / time
   var ttinner = $.new('p');
-  var valobj = $.new('p').text(formatBytes(value) + ' ');
+  var valobj = $.new('p').text(formatUnit(value) + ' ');
   // Delta
   if (buildindex > 0) {
     valobj.append(mkDelta(value, series[buildindex - 1][1]));
@@ -594,7 +618,7 @@ Tooltip.prototype._buildlistView = function () {
         // revision (also takes you to hg)
         buildcrumb.append(mkGitLink(build['revision']));
         // Memory usage
-        buildcrumb.append($.new('span').text(' ' + formatBytes(mem)));
+        buildcrumb.append($.new('span').text(' ' + formatUnit(mem)));
         // delta
         if (lastmem) {
           var deltaobj = mkDelta(mem, lastmem);
@@ -659,7 +683,7 @@ Tooltip.prototype._buildlistView = function () {
   header.append($.new('p').text('Datapoint is the median of ' + numbuilds + ' tests'));
   header.append(mkDelta(last, first));
   header.append($.new('span').addClass('small')
-                 .text(' ( ' + formatBytes(min) + ' min, ' + formatBytes(max) + ' max )'));
+                 .text(' ( ' + formatUnit(min) + ' min, ' + formatUnit(max) + ' max )'));
   return wrapper;
 }
 
@@ -807,7 +831,7 @@ function Plot(appendto) {
 
   this.container = $.new('div').addClass('graphContainer');
   if (appendto) this.container.appendTo(appendto);
-  $.new('h2').text(name).appendTo(this.container);
+  //$.new('h2').text(name).appendTo(this.container);
   this.rhsContainer = $.new('div').addClass('rhsContainer').appendTo(this.container);
   this.zoomOutButton = $.new('a', { href: '#', class: 'zoomOutButton' })
                         .appendTo($('#zoomOutButtonContainer'))
@@ -893,13 +917,17 @@ function Plot(appendto) {
         ticks: function(axis) {
           // If you zoom in and there are no points to show, axis.max will be
           // very small.  So let's say that we'll always graph at least 32mb.
-          var axisMax = Math.max(axis.max, 1 * 1024 * 1024);
+          var minMax = gTests[gCurrentTestID].unit == 'bytes' ? 1 * 1024 * 1024 : 0;
+          var axisMax = Math.max(axis.max, minMax);
 
           var approxNumTicks = 10;
           var interval = axisMax / approxNumTicks;
 
           // Round interval up to nearest power of 2.
-          interval = Math.pow(2, Math.ceil(Math.log(interval) / Math.log(2)));
+          if (gTests[gCurrentTestID].unit == 'bytes')
+            interval = Math.pow(2, Math.ceil(Math.log(interval) / Math.log(2)));
+          else
+            interval = Math.pow(10, Math.ceil(Math.log(interval) / Math.log(10)));
 
           // Round axis.max up to the next interval.
           var max = Math.ceil(axisMax / interval) * interval;
@@ -914,7 +942,8 @@ function Plot(appendto) {
         },
 
         tickFormatter: function(val, axis) {
-          return val / (1024 * 1024) + ' MiB';
+          //return val / (1024 * 1024) + ' MiB';
+          return formatUnit(val, gTests[gCurrentTestID].unit, axis.max);
         }
       },
       legend: {
