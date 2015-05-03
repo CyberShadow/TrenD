@@ -302,7 +302,7 @@ class ProgramPhaseTest : ProgramTest
 
 	override @property string testID() { return "%s-%s".format(stageID, statID); }
 	override @property string testName() { return "%s - %s".format(stageName, statName); }
-	override @property string testDescription() { return "%s during %s (best of %d runs)".format(statDescription, stageDescription, program.info.iterations); }
+	override @property string testDescription() { return "%s during %s".format(statDescription, stageDescription); }
 }
 
 class ProgramStatTest(string field, Unit _unit, bool _exact, string _name, string _description) : ProgramPhaseTest
@@ -311,7 +311,7 @@ class ProgramStatTest(string field, Unit _unit, bool _exact, string _name, strin
 
 	override @property string statID() { return "%s-%d".format(field.toLower(), program.info.iterations); }
 	override @property string statName() { return _name; }
-	override @property string statDescription() { return _description; }
+	override @property string statDescription() { return "%s (best of %d runs)".format(_description, program.info.iterations).replace(") (", ", "); }
 	override @property Unit unit() { return _unit; }
 	override @property bool exact() { return _exact; }
 
