@@ -31,35 +31,55 @@ version (Posix)
 
 struct ProgramInfo
 {
-	string id, name, rawCode;
+	string id, name, code;
 	int iterations = 10;
 
-	@property string code()
+	static ProgramInfo fromSource(string id, string name, string rawCode)
 	{
-		return rawCode
+		ProgramInfo pi;
+		pi.id = id;
+		pi.name = name;
+		pi.code = rawCode
 			.replace("\n\t\t", "\n")
 			.replace("\t", "    ")
 			.strip()
 		;
+		return pi;
+	}
+
+	static ProgramInfo fromFile(string id, string name)
+	{
+		ProgramInfo pi;
+		pi.id = id;
+		pi.name = name;
+		pi.code = readText("benchmarks/" ~ id ~ ".d");
+		return pi;
 	}
 }
 
-const ProgramInfo[] programs = [
-	ProgramInfo("empty", "Empty program", q{
-		void main()
-		{
-		}
-	}),
+const ProgramInfo[] programs;
 
-	ProgramInfo("hello", "\"Hello, world\"", q{
-		import std.stdio;
+shared static this()
+{
+	programs = [
+		ProgramInfo.fromSource("empty", "Empty program", q{
+			void main()
+			{
+			}
+		}),
 
-		void main()
-		{
-			writeln("Hello, world!");
-		}
-	}),
-];
+		ProgramInfo.fromSource("hello", "\"Hello, world\"", q{
+			import std.stdio;
+
+			void main()
+			{
+				writeln("Hello, world!");
+			}
+		}),
+
+		ProgramInfo.fromFile("dietbench", "\"Vibe.d diet templates\""),
+	];
+}
 
 struct ExecutionStats
 {
