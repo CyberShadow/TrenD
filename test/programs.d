@@ -59,6 +59,25 @@ const ProgramInfo[] programs = [
 			writeln("Hello, world!");
 		}
 	}),
+	
+	ProgramInfo("ctfe_fibonacci", "CTFE Fibonacci", q{
+		import std.stdio;
+		
+		ulong genFibonacci(ulong n)
+		{
+			if( n < 2 )
+				return n;
+			else
+				return genFibonacci(n-1) + genFibonacci(n-2);
+		}
+
+		enum fibonacci = genFibonacci(1000);
+		 
+		void main() 
+		{
+			writeln(fibonacci);
+		}
+	}),
 ];
 
 struct ExecutionStats
