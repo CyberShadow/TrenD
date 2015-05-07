@@ -31,7 +31,7 @@ version (Posix)
 
 struct ProgramInfo
 {
-	string id, name, code;
+	string id, name, code, description;
 	int iterations = 10;
 
 	static ProgramInfo fromSource(string id, string name, string rawCode)
@@ -44,6 +44,7 @@ struct ProgramInfo
 			.replace("\t", "    ")
 			.strip()
 		;
+		pi.description = "the following program:<pre>%s</pre>".format(encodeEntities(pi.code));
 		return pi;
 	}
 
@@ -52,7 +53,9 @@ struct ProgramInfo
 		ProgramInfo pi;
 		pi.id = id;
 		pi.name = name;
-		pi.code = readText("benchmarks/" ~ id ~ ".d");
+		auto fileName = "benchmarks/" ~ id ~ ".d";
+		pi.code = readText(fileName);
+		pi.description = "the program <a href='%s'>%s.d</a>.".format(fileName, id);
 		return pi;
 	}
 }
@@ -268,7 +271,7 @@ abstract class ProgramTest : Test
 
 	override @property string id() { return "program-%s-%s".format(program.info.id, testID); }
 	override @property string name() { return "%s - %s".format(program.info.name, testName); }
-	override @property string description() { return "The <span class='test-description'>%s</span> for the following program:<pre>%s</pre>".format(testDescription, encodeEntities(program.info.code)); }
+	override @property string description() { return "The <span class='test-description'>%s</span> for %s".format(testDescription, program.info.description); }
 
 	override void reset() { program.reset(); }
 }
