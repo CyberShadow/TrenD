@@ -71,7 +71,7 @@ const ProgramInfo[] programs = [
 				return genFibonacci(n-1) + genFibonacci(n-2);
 		}
 
-		enum fibonacci = genFibonacci(1000);
+		enum fibonacci = genFibonacci(40);
 		 
 		void main() 
 		{
