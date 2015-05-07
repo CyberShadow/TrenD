@@ -80,7 +80,7 @@ shared static this()
 			}
 		}),
 
-		ProgramInfo.fromFile("dietbench", "\"Vibe.d diet templates\""),
+		ProgramInfo.fromFile("dietbench", "Vibe.d diet templates"),
 	];
 }
 
