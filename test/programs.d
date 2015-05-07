@@ -59,6 +59,26 @@ const ProgramInfo[] programs = [
 			writeln("Hello, world!");
 		}
 	}),
+	
+	ProgramInfo("ctfe_factorial", "CTFE Factorial", q{
+		import std.stdio;
+
+		uint[] genFactorials(uint n) 
+		{
+		    auto result = new uint[n];
+		    result[0] = 1;
+		    foreach (i; 1 .. n)
+		        result[i] = result[i - 1] * i;
+		    return result;
+		}
+ 
+		enum factorials = genFactorials(30);
+		 
+		void main() 
+		{
+			writeln(factorials);
+		}
+	}),
 ];
 
 struct ExecutionStats
