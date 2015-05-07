@@ -92,8 +92,8 @@ struct ScoreFactors
 	int untested    =  100; /// points per test
 
 	/// Prefer commits between big differences in test results:
-	int diffMax     =  500; /// max points (for 100% difference)
-	int diffExact   =   10; /// multiplier for "exact" tests
+	int diffMax     = 1000; /// max points (for 100% difference)
+	int diffExact   =    5; /// multiplier for "exact" tests
 }
 ScoreFactors scoreFactors;
 
