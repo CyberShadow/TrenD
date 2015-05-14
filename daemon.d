@@ -26,24 +26,21 @@ else
 enum idleDuration = 1.minutes;
 const jsonPath = "web/data/data.json.gz";
 
+string[string][string] history;
 string[] components;
 
 void main()
 {
 	components = tests.map!(test => test.components).join.sort().uniq.array;
 
-	log("Loading existing data...");
 	loadInfo();
 
-	log("Saving results...");
+	update();
+
 	atomic!saveJson(jsonPath);
 
 	while (true)
 	{
-		log("Updating...");
-		d.update();
-
-		log("Finding things to do...");
 		auto todo = getToDo();
 
 		auto start = Clock.currTime;
@@ -59,16 +56,19 @@ void main()
 				break;
 		}
 
-		log("Saving results...");
 		atomic!saveJson(jsonPath);
 
 		log("Idling...");
 		Thread.sleep(idleDuration);
+
+		update();
 	}
 }
 
 void loadInfo()
 {
+	log("Loading existing data...");
+
 	badCommits = null;
 	foreach (string commit; query("SELECT [Commit] FROM [Commits] WHERE [Error]=1").iterate())
 		badCommits[commit] = true;
@@ -76,6 +76,14 @@ void loadInfo()
 	testResults = null;
 	foreach (string commit, string testID, long value; query("SELECT [Commit], [TestID], [Value] FROM [Results]").iterate())
 		testResults[commit][testID] = value;
+}
+
+void update()
+{
+	log("Updating...");
+	d.update();
+
+	history = d.getMetaRepo().getSubmoduleHistory(["origin/master"]);
 }
 
 alias LogEntry = DManager.LogEntry;
@@ -103,12 +111,14 @@ ScoreFactors scoreFactors;
 
 LogEntry[] getToDo()
 {
+	log("Finding things to do...");
+
 	log("Getting log...");
 	auto commits = d.getLog();
 	commits.reverse(); // oldest first
 
 	log("Getting cache state...");
-	auto cacheState = d.getCacheState(["origin/master"], config.buildConfig, components);
+	auto cacheState = d.getCacheState(history, config.buildConfig, components);
 
 	log("Calculating...");
 
@@ -275,13 +285,14 @@ void runTests(LogEntry commit)
 
 void saveJson(string target)
 {
+	log("Saving results...");
+
 	static struct JsonData
 	{
 		struct Commit
 		{
 			string commit, message;
 			long time;
-			bool error;
 		}
 		Commit[] commits;
 
@@ -303,8 +314,8 @@ void saveJson(string target)
 	}
 	JsonData data;
 
-	foreach (string commit, string message, long time, int error; query("SELECT [Commit], [Message], [Time], [Error] FROM [Commits]").iterate())
-		data.commits ~= JsonData.Commit(commit, message, time, error != 0);
+	foreach (string commit, string message, long time; query("SELECT [Commit], [Message], [Time] FROM [Commits]").iterate())
+		data.commits ~= JsonData.Commit(commit, message, time);
 	foreach (string testID, string commit, long value, string error; query("SELECT [TestID], [Commit], [Value], [Error] FROM [Results]").iterate())
 		data.results ~= JsonData.Result(testID, commit, value, error);
 	foreach (test; tests)
