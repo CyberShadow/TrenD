@@ -104,7 +104,7 @@ LogEntry[] getToDo()
 	commits.reverse(); // oldest first
 
 	log("Getting cache state...");
-	auto cacheState = d.getCacheState("origin/master", config.buildConfig);
+	auto cacheState = d.getCacheState(["origin/master"], config.buildConfig);
 
 	log("Calculating...");
 
