@@ -10,18 +10,20 @@ import common;
 /// File size of D file.
 class FilesizeTest : Test
 {
-	this(string fileName)
+	this(string fileName, string component)
 	{
 		this.fileName = fileName;
+		this.component = component;
 	}
 
-	string fileName;
+	string fileName, component;
 
 	override @property string id() { return "size-" ~ fileName.baseName().stripExtension(); }
 	override @property string name() { return "Size of %s".format(fileName.baseName()); }
 	override @property string description() { return "The size of the built file %s.".format(fileName); }
 	override @property Unit unit() { return Unit.bytes; }
 	override @property bool exact() { return true; }
+	override @property string[] components() { return [component]; }
 
 	override long sample()
 	{
@@ -37,6 +39,7 @@ class SrcSizeTest : Test
 	override @property string description() { return "The size of the Phobos/Druntime source code / includes."; }
 	override @property Unit unit() { return Unit.bytes; }
 	override @property bool exact() { return true; }
+	override @property string[] components() { return ["phobos-includes", "druntime"]; }
 
 	override long sample()
 	{
@@ -53,7 +56,8 @@ static this()
 		auto fileNames = [`bin\dmd.exe`, `lib\phobos.lib`];
 	else
 		auto fileNames = [`bin/dmd`, `lib/libphobos2.a`];
-	foreach (fn; fileNames)
-		tests ~= new FilesizeTest(fn);
+	auto components =    ["dmd", "phobos"];
+	foreach (i, fn; fileNames)
+		tests ~= new FilesizeTest(fn, components[i]);
 	tests ~= new SrcSizeTest;
 }

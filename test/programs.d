@@ -272,6 +272,7 @@ abstract class ProgramTest : Test
 	override @property string id() { return "program-%s-%s".format(program.info.id, testID); }
 	override @property string name() { return "%s - %s".format(program.info.name, testName); }
 	override @property string description() { return "The <span class='test-description'>%s</span> for %s".format(testDescription, program.info.description); }
+	override @property string[] components() { return ["dmd", "phobos-includes", "druntime", "phobos"]; }
 
 	override void reset() { program.reset(); }
 }

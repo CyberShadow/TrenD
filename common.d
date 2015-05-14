@@ -28,6 +28,9 @@ class Test
 	/// Whether this test is exact (unlikely to change in successive measurements)
 	abstract @property bool exact();
 
+	/// List of required DMD components (as done by ae.sys.d.manager) to run this test.
+	abstract @property string[] components();
+
 	/// This will be called before any sample() call for all tests.
 	void reset() {}
 
