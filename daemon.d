@@ -13,6 +13,8 @@ import ae.sys.file;
 import ae.utils.json;
 import ae.utils.time;
 
+static import ae.sys.net.ae;
+
 import common;
 import test;
 
