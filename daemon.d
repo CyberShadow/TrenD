@@ -29,11 +29,12 @@ enum idleDuration = 1.minutes;
 const jsonPath = "web/data/data.json.gz";
 
 string[string][string] history;
-string[] components;
 
 void main()
 {
-	components = tests.map!(test => test.components).join.sort().uniq.array;
+	auto components = tests.map!(test => test.components).join.sort().uniq.array;
+	foreach (component; DManager.allComponents)
+		config.buildConfig.components.enable[component] = components.canFind(component);
 
 	loadInfo();
 
@@ -120,7 +121,7 @@ LogEntry[] getToDo()
 	commits.reverse(); // oldest first
 
 	log("Getting cache state...");
-	auto cacheState = d.getCacheState(history, config.buildConfig, components);
+	auto cacheState = d.getCacheState(history, config.buildConfig);
 
 	log("Calculating...");
 
@@ -231,7 +232,7 @@ bool prepareCommit(LogEntry commit)
 	bool error = false;
 	log("Building commit: " ~ commit.hash);
 	try
-		d.buildRev(commit.hash, config.buildConfig, components);
+		d.buildRev(commit.hash, config.buildConfig);
 	catch (Exception e)
 	{
 		error = true;
