@@ -40,7 +40,7 @@ struct ProgramInfo
 		pi.id = id;
 		pi.name = name;
 		pi.code = rawCode
-			.replace("\n\t\t", "\n")
+			.replace("\n\t\t\t", "\n")
 			.replace("\t", "    ")
 			.strip()
 		;
