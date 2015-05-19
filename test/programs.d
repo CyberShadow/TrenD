@@ -80,7 +80,7 @@ shared static this()
 			}
 		}),
 
-		ProgramInfo.fromSource("arrays", "Dynamic/associative arrays", q{
+		ProgramInfo.fromSource("arrays2", "Dynamic/associative arrays", q{
 			enum maxLength = 7;
 			string letters = "abcdefgh";
 
@@ -105,7 +105,11 @@ shared static this()
 				int total;
 				foreach (k, v; dict)
 					total += v;
-				assert(total == letters.length ^^ maxLength);
+
+				int expected = 1;
+				foreach (n; 0..maxLength)
+					expected *= letters.length;
+				assert(total == expected);
 			}
 		}),
 
