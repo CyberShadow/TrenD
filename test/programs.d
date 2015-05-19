@@ -80,6 +80,35 @@ shared static this()
 			}
 		}),
 
+		ProgramInfo.fromSource("arrays", "Dynamic/associative arrays", q{
+			enum maxLength = 7;
+			string letters = "abcdefgh";
+
+			int[string] dict;
+
+			void gen(string base)
+			{
+				if (base.length == maxLength)
+				{
+					auto s = base.dup;
+					s.sort;
+					dict[s.idup]++;
+				}
+				else
+					foreach (c; letters)
+						gen(base ~ c);
+			}
+
+			void main()
+			{
+				gen(null);
+				int total;
+				foreach (k, v; dict)
+					total += v;
+				assert(total == letters.length ^^ maxLength);
+			}
+		}),
+
 		ProgramInfo.fromFile("dietbench", "Vibe.d diet templates"),
 	];
 }
