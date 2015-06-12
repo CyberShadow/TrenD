@@ -8,8 +8,10 @@ import std.datetime;
 import std.range;
 import std.typecons;
 
+import ae.sys.cmd : NULL_FILE;
 import ae.sys.d.manager;
 import ae.sys.file;
+import ae.sys.log;
 import ae.utils.json;
 import ae.utils.time;
 
@@ -32,6 +34,13 @@ string[string][string] history;
 
 void main()
 {
+	if (quiet)
+	{
+		auto f = File(NULL_FILE, "wb");
+		std.stdio.stdout = f;
+		std.stdio.stderr = f;
+	}
+
 	auto components = tests.map!(test => test.components).join.sort().uniq.array;
 	foreach (component; DManager.allComponents)
 		config.buildConfig.components.enable[component] = components.canFind(component);
