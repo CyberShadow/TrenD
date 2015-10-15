@@ -93,7 +93,20 @@ void loadInfo()
 void update()
 {
 	log("Updating...");
-	d.update();
+
+	while (true)
+	{
+		try
+		{
+			d.update();
+			break;
+		}
+		catch (Exception e)
+		{
+			log("Update error: " ~ e.msg);
+			Thread.sleep(updateInterval);
+		}
+	}
 
 	history = d.getMetaRepo().getSubmoduleHistory(["origin/master"]);
 }
