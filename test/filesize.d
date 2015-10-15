@@ -45,7 +45,7 @@ class SrcSizeTest : Test
 	{
 		return buildPath(d.buildDir, "import")
 			.dirEntries(SpanMode.depth)
-			.map!(de => de.getSize())
+			.map!(de => de.size())
 			.sum;
 	}
 }

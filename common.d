@@ -63,6 +63,7 @@ class TrenDManager : DManager
 	{
 		config.local.workDir = .config.workDir;
 		config.cache = .config.cache;
+		config.build = .config.buildConfig;
 	}
 
 	override void prepareEnv()

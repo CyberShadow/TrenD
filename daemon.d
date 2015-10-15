@@ -8,11 +8,11 @@ import std.datetime;
 import std.range;
 import std.typecons;
 
-import ae.sys.cmd : NULL_FILE;
 import ae.sys.d.manager;
 import ae.sys.file;
 import ae.sys.log;
 import ae.utils.json;
+import ae.utils.path : nullFileName;
 import ae.utils.time;
 
 static import ae.sys.net.ae;
@@ -36,7 +36,7 @@ void main()
 {
 	if (quiet)
 	{
-		auto f = File(NULL_FILE, "wb");
+		auto f = File(nullFileName, "wb");
 		std.stdio.stdout = f;
 		std.stdio.stderr = f;
 	}
@@ -130,7 +130,7 @@ LogEntry[] getToDo()
 	commits.reverse(); // oldest first
 
 	log("Getting cache state...");
-	auto cacheState = d.getCacheState(history, config.buildConfig);
+	auto cacheState = d.getCacheState(history);
 
 	log("Calculating...");
 
@@ -241,7 +241,7 @@ bool prepareCommit(LogEntry commit)
 	bool error = false;
 	log("Building commit: " ~ commit.hash);
 	try
-		d.buildRev(commit.hash, config.buildConfig);
+		d.buildRev(commit.hash);
 	catch (Exception e)
 	{
 		error = true;
