@@ -6,6 +6,7 @@ import std.array;
 import std.conv;
 import std.datetime;
 import std.range;
+import std.stdio;
 import std.typecons;
 
 import ae.sys.d.manager;
@@ -43,7 +44,7 @@ void main()
 
 	auto components = tests.map!(test => test.components).join.sort().uniq.array;
 	foreach (component; DManager.allComponents)
-		config.buildConfig.components.enable[component] = components.canFind(component);
+		d.config.build.components.enable[component] = components.canFind(component);
 
 	loadInfo();
 

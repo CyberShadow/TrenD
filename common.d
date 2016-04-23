@@ -3,6 +3,7 @@ module common;
 import std.exception;
 import std.file;
 import std.process;
+import std.stdio;
 import std.string;
 
 import ae.sys.d.manager;
@@ -48,12 +49,15 @@ enum Unit
 
 // ***************************************************************************
 
-Logger log;
-
-static this()
+Logger log()
 {
-	log = createLogger("TrenD");
+	static Logger instance;
+	if (!instance)
+		instance = createLogger("TrenD");
+	return instance;
 }
+
+void log(string s) { return .log()(s); }
 
 // ***************************************************************************
 
@@ -61,15 +65,8 @@ class TrenDManager : DManager
 {
 	this()
 	{
-		config.local.workDir = .config.workDir;
-		config.cache = .config.cache;
-		config.build = .config.buildConfig;
-	}
-
-	override void prepareEnv()
-	{
-		super.prepareEnv();
-		applyEnv(.config.environment);
+		config.build = cast().config.build;
+		config.local = cast().config.local;
 	}
 
 	override string getCallbackCommand() { assert(false); }
@@ -87,17 +84,16 @@ static this()
 
 struct Config
 {
-	DManager.Config.Build buildConfig;
-	string workDir = "../Digger";
-	string cache = "git";
-	string[string] environment;
+	DManager.Config.Build build;
+	DManager.Config.Local local;
 }
 
-Config config;
+immutable Config config;
 
 shared static this()
 {
-	config = "trend.ini"
+	config = cast(immutable)
+		"trend.ini"
 		.readText()
 		.splitLines()
 		.parseStructuredIni!Config();
@@ -115,7 +111,7 @@ shared static this()
 
 	void createDatabase(string target)
 	{
-		std.stdio.stderr.writeln("Creating new database from schema");
+		log("Creating new database from schema");
 		ensurePathExists(target);
 		enforce(spawnProcess(["sqlite3", target], File("schema.sql", "rb")).wait() == 0, "sqlite3 failed");
 	}
