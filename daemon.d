@@ -137,10 +137,10 @@ struct ScoreFactors
 	int recentExp   =   50; /// curve exponent
 
 	/// Prefer untested commits:
-	int untested    =  100; /// points per test
+	int untested    = 1000; /// total budget, awarded in full if never tested
 
 	/// Prefer commits between big differences in test results:
-	int diffMax     = 1000; /// max points (for 100% difference)
+	int diffMax     = 5000; /// max points (for 100% difference)
 	int diffExact   =    5; /// multiplier for "exact" tests
 }
 ScoreFactors scoreFactors;
@@ -238,7 +238,7 @@ ToDoEntry[] getToDo()
 		}
 	}
 	foreach (i, points; diffPoints)
-		award(i, points, "diff");
+		award(i, points / cast(int)tests.length, "diff");
 
 	debug (TODO)
 	{
