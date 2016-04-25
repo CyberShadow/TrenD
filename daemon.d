@@ -137,10 +137,10 @@ struct ScoreFactors
 	int recentExp   =   50; /// curve exponent
 
 	/// Prefer untested commits:
-	int untested    = 1000; /// total budget, awarded in full if never tested
+	int untested    =  100; /// total budget, awarded in full if never tested
 
 	/// Prefer commits between big differences in test results:
-	int diffMax     = 5000; /// max points (for 100% difference)
+	int diffMax     = 1000; /// max points (for 100% difference)
 	int diffExact   =    5; /// multiplier for "exact" tests
 }
 ScoreFactors scoreFactors;
