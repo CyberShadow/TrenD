@@ -25,10 +25,15 @@ bool[string] badCommits;
 long[string][string] testResults; // testResults[commit.hash][test.id] = value
 
 debug
+{
 	enum updateInterval = 1.minutes;
+	enum idleDuration = 0.minutes;
+}
 else
+{
 	enum updateInterval = 5.minutes;
-enum idleDuration = 1.minutes;
+	enum idleDuration = 1.minutes;
+}
 const jsonPath = "web/data/data.json.gz";
 
 string[string][string] history;
