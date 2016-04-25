@@ -7,6 +7,7 @@ import std.conv;
 import std.datetime;
 import std.range;
 import std.stdio;
+import std.string;
 import std.typecons;
 
 import ae.sys.d.manager;
@@ -117,7 +118,11 @@ void update()
 	history = d.getMetaRepo().getSubmoduleHistory(["origin/master"]);
 }
 
-alias LogEntry = DManager.LogEntry;
+struct ToDoEntry
+{
+	DManager.LogEntry commit;
+	int score;
+}
 
 struct ScoreFactors
 {
@@ -140,7 +145,7 @@ struct ScoreFactors
 }
 ScoreFactors scoreFactors;
 
-LogEntry[] getToDo()
+ToDoEntry[] getToDo()
 {
 	log("Finding things to do...");
 
@@ -238,19 +243,19 @@ LogEntry[] getToDo()
 
 	auto index = new size_t[commits.length];
 	scores.makeIndex!"a>b"(index);
-	return index.map!(i => commits[i]).array();
+	return index.map!(i => ToDoEntry(commits[i], scores[i])).array();
 }
 
-bool prepareCommit(LogEntry commit)
+bool prepareCommit(ToDoEntry entry)
 {
-	debug log("Running tests for commit: " ~ commit.hash);
-	if (commit.hash in badCommits)
+	debug log("Running tests for commit: %s (%s, score %d)".format(entry.commit.hash, entry.commit.time, entry.score));
+	if (entry.commit.hash in badCommits)
 	{
 		debug log("Commit known to be bad - skipping");
 		return false;
 	}
 
-	bool wantTests = tests.any!(test => test.id !in testResults.get(commit.hash, null));
+	bool wantTests = tests.any!(test => test.id !in testResults.get(entry.commit.hash, null));
 	if (!wantTests)
 	{
 		debug log("No new tests to sample - skipping");
@@ -258,9 +263,9 @@ bool prepareCommit(LogEntry commit)
 	}
 
 	bool error = false;
-	log("Building commit: " ~ commit.hash);
+	log("Building commit: " ~ entry.commit.hash);
 	try
-		d.buildRev(commit.hash);
+		d.buildRev(entry.commit.hash);
 	catch (Exception e)
 	{
 		error = true;
@@ -268,23 +273,23 @@ bool prepareCommit(LogEntry commit)
 	}
 
 	query("INSERT OR REPLACE INTO [Commits] ([Commit], [Message], [Time], [Error]) VALUES (?, ?, ?, ?)")
-		.exec(commit.hash, commit.message.join("\n"), commit.time.toUnixTime, error);
+		.exec(entry.commit.hash, entry.commit.message.join("\n"), entry.commit.time.toUnixTime, error);
 
 	if (error)
 	{
-		badCommits[commit.hash] = true;
+		badCommits[entry.commit.hash] = true;
 		return false;
 	}
 
 	return true;
 }
 
-void runTests(LogEntry commit)
+void runTests(ToDoEntry entry)
 {
 	log("Preparing list of tests to run...");
 	Test[] testsToRun;
 	foreach (test; tests)
-		foreach (int count; query("SELECT COUNT(*) FROM [Results] WHERE [TestID]=? AND [Commit]=?").iterate(test.id, commit.hash))
+		foreach (int count; query("SELECT COUNT(*) FROM [Results] WHERE [TestID]=? AND [Commit]=?").iterate(test.id, entry.commit.hash))
 			if (count == 0)
 				testsToRun ~= test;
 
@@ -307,8 +312,8 @@ void runTests(LogEntry commit)
 			error = e.msg;
 			log("Test failed with error: " ~ e.toString());
 		}
-		query("INSERT INTO [Results] ([TestID], [Commit], [Value], [Error]) VALUES (?, ?, ?, ?)").exec(test.id, commit.hash, result, error);
-		testResults[commit.hash][test.id] = result;
+		query("INSERT INTO [Results] ([TestID], [Commit], [Value], [Error]) VALUES (?, ?, ?, ?)").exec(test.id, entry.commit.hash, result, error);
+		testResults[entry.commit.hash][test.id] = result;
 	}
 	log("Saving test results...");
 	query("COMMIT TRANSACTION").exec();
