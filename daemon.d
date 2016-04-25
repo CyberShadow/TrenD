@@ -159,26 +159,32 @@ ToDoEntry[] getToDo()
 	log("Calculating...");
 
 	auto scores = new int[commits.length];
+	debug(TODO) auto scoreReasons = new int[string][commits.length];
+
+	void award(size_t commit, int points, string reason)
+	{
+		scores[commit] += points;
+		debug (TODO)
+			scoreReasons[commit][reason] += points;
+	}
 
 	foreach (i; 0..commits.length)
 	{
-		int score;
-
 		if (i)
 		{
+			int score = 0;
 			foreach (b; 0..30)
 				if ((i & (1<<b)) == 0)
 					score += scoreFactors.base2;
 				else
 					break;
+			award(i, score, "base2");
 		}
 
 		if (cacheState[commits[i].hash])
-			score += scoreFactors.cached;
+			award(i, scoreFactors.cached, "cached");
 
-		score += cast(int)(scoreFactors.recentMax * (double(i) / (commits.length-1)) ^^ scoreFactors.recentExp);
-
-		scores[i] = score;
+		award(i, cast(int)(scoreFactors.recentMax * (double(i) / (commits.length-1)) ^^ scoreFactors.recentExp), "recent");
 	}
 
 	size_t[string] commitLookup = commits.map!(logEntry => logEntry.hash).enumerate.map!(t => tuple(t[1], t[0])).assocArray;
@@ -232,13 +238,13 @@ ToDoEntry[] getToDo()
 		}
 	}
 	foreach (i, points; diffPoints)
-		scores[i] += points;
+		award(i, points, "diff");
 
-	debug(TODO)
+	debug (TODO)
 	{
 		auto f = File("todolist.txt", "wb");
 		foreach (i, commit; commits)
-			f.writefln("%s %s %5d", commit.hash, commit.time.formatTime!`Y-m-d H:i:s`, scores[i]);
+			f.writefln("%s %s %5d %s", commit.hash, commit.time.formatTime!`Y-m-d H:i:s`, scores[i], scoreReasons[i]);
 	}
 
 	auto index = new size_t[commits.length];
