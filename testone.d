@@ -20,7 +20,7 @@ void main(string[] args)
 	foreach (commit; commits)
 	{
 		log("Preparing commit: " ~ commit);
-		d.buildRev(commit, config.buildConfig);
+		d.buildRev(commit);
 
 		long[] results;
 		string[] errors;
