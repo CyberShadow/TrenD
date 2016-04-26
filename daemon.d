@@ -64,6 +64,7 @@ void main()
 	}
 
 	auto components = tests.map!(test => test.components).join.sort().uniq.array;
+	log("Enabled components: %s".format(components));
 	foreach (component; DManager.allComponents)
 		d.config.build.components.enable[component] = components.canFind(component);
 
