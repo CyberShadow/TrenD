@@ -1,3 +1,16 @@
+module daemon;
+
+/*
+  Database structure:
+  - Commits table holds information about every D-dot-git meta-repository commit:
+    commit hash, commit message (containing a link to the PR), and time.
+    Error is a boolean indicating whether that commit is buildable or not.
+  - Results table holds the test results.
+    TestID is the `test.id` property.
+    "Error", if set, indicates an error running the test,
+    and holds the error message preventing that test from running.
+ */
+
 import core.thread;
 import core.time;
 
@@ -22,7 +35,7 @@ static import ae.sys.net.ae;
 import common;
 import test;
 
-bool[string] badCommits;
+bool[string] badCommits; /// In-memory cache of un-buildable commits
 long[string][string] testResults; // testResults[commit.hash][test.id] = value
 
 debug
@@ -35,8 +48,10 @@ else
 	enum updateInterval = 5.minutes;
 	enum idleDuration = 1.minutes;
 }
-const jsonPath = "web/data/data.json.gz";
+const jsonPath = "web/data/data.json.gz"; /// Path to write data for the web interface
 
+/// Result of getSubmoduleHistory of the meta-repository.
+/// history[commitHash][submoduleName] == submoduleCommitHash
 string[string][string] history;
 
 void main()
@@ -84,6 +99,7 @@ void main()
 	}
 }
 
+/// Load data from database on disk at startup
 void loadInfo()
 {
 	log("Loading existing data...");
@@ -97,6 +113,7 @@ void loadInfo()
 		testResults[commit][testID] = value;
 }
 
+/// Fetch our Git repositories
 void update()
 {
 	log("Updating...");
@@ -145,6 +162,7 @@ struct ScoreFactors
 }
 ScoreFactors scoreFactors;
 
+/// What should we build/test next?
 ToDoEntry[] getToDo()
 {
 	log("Finding things to do...");
@@ -252,6 +270,8 @@ ToDoEntry[] getToDo()
 	return index.map!(i => ToDoEntry(commits[i], scores[i])).array();
 }
 
+/// Build (or pull from cache) a commit for testing
+/// Return true if successful
 bool prepareCommit(ToDoEntry entry)
 {
 	debug log("Running tests for commit: %s (%s, score %d)".format(entry.commit.hash, entry.commit.time, entry.score));
