@@ -4,7 +4,7 @@ module daemon;
   Database structure:
   - Commits table holds information about every D-dot-git meta-repository commit:
     commit hash, commit message (containing a link to the PR), and time.
-    Error is a boolean indicating whether that commit is buildable or not.
+    Error is set to the error message when building the commit, if that failed.
   - Results table holds the test results.
     TestID is the `test.id` property.
     "Error", if set, indicates an error running the test,
@@ -105,7 +105,7 @@ void loadInfo()
 	log("Loading existing data...");
 
 	badCommits = null;
-	foreach (string commit; query("SELECT [Commit] FROM [Commits] WHERE [Error]=1").iterate())
+	foreach (string commit; query("SELECT [Commit] FROM [Commits] WHERE [Error] IS NOT NULL").iterate())
 		badCommits[commit] = true;
 
 	testResults = null;
@@ -288,13 +288,13 @@ bool prepareCommit(ToDoEntry entry)
 		return false;
 	}
 
-	bool error = false;
+	string error = null;
 	log("Building commit: " ~ entry.commit.hash);
 	try
 		d.buildRev(entry.commit.hash);
 	catch (Exception e)
 	{
-		error = true;
+		error = e.msg;
 		log("Error: " ~ e.toString());
 	}
 

@@ -2,7 +2,7 @@ CREATE TABLE [Commits] (
 [Commit] CHAR(40) NOT NULL,
 [Message] TEXT NOT NULL,
 [Time] INTEGER NOT NULL,
-[Error] BOOLEAN NOT NULL
+[Error] TEXT NULL
 );
 
 CREATE UNIQUE INDEX [CommitIndex] ON [Commits] (
