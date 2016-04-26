@@ -1,6 +1,7 @@
 import std.algorithm;
 import std.array;
 import std.conv;
+import std.getopt;
 import std.stdio;
 
 import common;
@@ -8,6 +9,11 @@ import test;
 
 void main(string[] args)
 {
+	bool noCache;
+	getopt(args,
+		"no-cache", &noCache,
+	);
+
 	string[] commits;
 	if (args.length > 1)
 		commits = args[1..$];
@@ -16,6 +22,8 @@ void main(string[] args)
 		d.getMetaRepo().needRepo();
 		commits = [d.getMetaRepo().getRef("origin/master")];
 	}
+	if (noCache)
+		d.config.local.cache = null;
 
 	foreach (commit; commits)
 	{
