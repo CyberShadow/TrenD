@@ -1,5 +1,7 @@
 module common;
 
+import std.algorithm;
+import std.array;
 import std.exception;
 import std.file;
 import std.process;
@@ -9,6 +11,7 @@ import std.string;
 import ae.sys.d.manager;
 import ae.sys.file;
 import ae.sys.log;
+import ae.utils.meta : singleton;
 import ae.utils.sini;
 
 class Test
@@ -67,18 +70,19 @@ class TrenDManager : DManager
 	{
 		config.build = cast().config.build;
 		config.local = cast().config.local;
+
+		auto components = tests.map!(test => test.components).join.sort().uniq.array;
+		log("Enabled components: %s".format(components));
+		foreach (component; DManager.allComponents)
+			config.build.components.enable[component] = components.canFind(component);
 	}
 
 	override string getCallbackCommand() { assert(false); }
 	override void log(string s) { .log(s); }
 }
 
-DManager d;
-
-static this()
-{
-	d = new TrenDManager;
-}
+// Late initialization to let tests array populate
+alias d = singleton!TrenDManager;
 
 // ***************************************************************************
 
