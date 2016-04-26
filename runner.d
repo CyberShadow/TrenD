@@ -14,9 +14,11 @@ module runner;
 import std.algorithm;
 import std.conv;
 import std.range;
+import std.stdio;
 import std.typecons;
 
 import ae.sys.d.manager;
+import ae.utils.time.format;
 
 import common;
 import test;
