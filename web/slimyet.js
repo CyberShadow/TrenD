@@ -1015,7 +1015,7 @@ Plot.prototype._buildSeries = function(start, stop) {
       var value = null;
       if (testID in commit.results) {
         var result = commit.results[testID];
-        if (!result.error.length)
+        if (result.error === null)
           value = result.value;
       }
 
