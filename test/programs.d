@@ -3,7 +3,7 @@ module test.programs;
 import std.algorithm;
 import std.array;
 import std.conv;
-import std.datetime;
+import std.datetime.stopwatch;
 import std.exception;
 import std.file;
 import std.format;
@@ -231,7 +231,7 @@ final class Program
 			}
 
 			sw.stop();
-			iterationStats.realTime = sw.peek().hnsecs * 100L;
+			iterationStats.realTime = sw.peek().total!"hnsecs" * 100L;
 
 			foreach (i, n; bestStats.tupleof)
 				bestStats.tupleof[i] = min(bestStats.tupleof[i], iterationStats.tupleof[i]);
