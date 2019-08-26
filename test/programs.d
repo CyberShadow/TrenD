@@ -312,7 +312,7 @@ abstract class ProgramTest : Test
 
 final class ObjectSizeTest : ProgramTest
 {
-	mixin GenerateContructorProxies;
+	mixin GenerateConstructorProxies;
 
 	override @property string testID() { return "objectsize"; }
 	override @property string testName() { return "object file size"; }
@@ -329,7 +329,7 @@ final class ObjectSizeTest : ProgramTest
 
 final class BinarySizeTest : ProgramTest
 {
-	mixin GenerateContructorProxies;
+	mixin GenerateConstructorProxies;
 
 	override @property string testID() { return "binarysize"; }
 	override @property string testName() { return "binary file size"; }
@@ -346,7 +346,7 @@ final class BinarySizeTest : ProgramTest
 
 class ProgramPhaseTest : ProgramTest
 {
-	mixin GenerateContructorProxies;
+	mixin GenerateConstructorProxies;
 
 	abstract @property string statID();
 	abstract @property string statName();
@@ -364,7 +364,7 @@ class ProgramPhaseTest : ProgramTest
 
 class ProgramStatTest(string field, Unit _unit, bool _exact, string _name, string _description) : ProgramPhaseTest
 {
-	mixin GenerateContructorProxies;
+	mixin GenerateConstructorProxies;
 
 	override @property string statID() { return "%s-%d".format(field.toLower(), program.info.iterations); }
 	override @property string statName() { return _name; }
@@ -390,7 +390,7 @@ alias ProgramKernelTimeTest  = ProgramStatTest!("kernelTime", Unit.nanoseconds, 
 
 class ProgramMemoryUsageTest : ProgramPhaseTest
 {
-	mixin GenerateContructorProxies;
+	mixin GenerateConstructorProxies;
 
 	static const string[] commandPrefix = ["valgrind", "--tool=massif", "--pages-as-heap=yes"];
 
@@ -434,7 +434,7 @@ class ProgramMemoryUsageTest : ProgramPhaseTest
 
 class ProgramCompilePhaseTest(StatTest) : StatTest
 {
-	mixin GenerateContructorProxies;
+	mixin GenerateConstructorProxies;
 	override @property string stageID() { return "compile"; }
 	override @property string stageName() { return "compilation"; }
 	override @property string stageDescription() { return "compilation (<tt>dmd -c " ~ dmdFlags.join(" ") ~ "</tt> invocation)"; }
@@ -443,7 +443,7 @@ class ProgramCompilePhaseTest(StatTest) : StatTest
 
 class ProgramLinkPhaseTest(StatTest) : StatTest
 {
-	mixin GenerateContructorProxies;
+	mixin GenerateConstructorProxies;
 	override @property string stageID() { return "link"; }
 	override @property string stageName() { return "linking"; }
 	override @property string stageDescription() { return "linking (<tt>dmd " ~ program.objFile.baseName ~ "</tt> invocation)"; }
@@ -452,7 +452,7 @@ class ProgramLinkPhaseTest(StatTest) : StatTest
 
 class ProgramExecutionPhaseTest(StatTest) : StatTest
 {
-	mixin GenerateContructorProxies;
+	mixin GenerateConstructorProxies;
 	override @property string stageID() { return "run"; }
 	override @property string stageName() { return "execution"; }
 	override @property string stageDescription() { return "test program execution"; }
