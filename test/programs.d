@@ -86,12 +86,23 @@ shared static this()
 
 			int[string] dict;
 
+			void countSort(char[] s)
+			{
+				size_t[256] counts;
+				foreach (c; s)
+					counts[c]++;
+				size_t i = 0;
+				foreach (c, count; counts)
+					foreach (n; 0 .. count)
+						s[i++] = cast(char)c;
+			}
+
 			void gen(string base)
 			{
 				if (base.length == maxLength)
 				{
 					auto s = base.dup;
-					s.sort;
+					s.countSort;
 					dict[s.idup]++;
 				}
 				else
