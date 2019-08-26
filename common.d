@@ -105,31 +105,59 @@ shared static this()
 
 // ***************************************************************************
 
-import ae.sys.sqlite3;
+import ae.sys.database;
+import ae.sys.sqlite3 : SQLite;
 
-SQLite db;
+Database database;
 
 shared static this()
 {
-	auto dbFileName = "data/trend.s3db";
+	database = Database("data/trend.s3db",
+	[
+		q"SQL
+CREATE TABLE [Commits] (
+	[Commit] CHAR(40) NOT NULL,
+	[Message] TEXT NOT NULL,
+	[Time] INTEGER NOT NULL,
+	[Error] BOOLEAN NOT NULL
+);
 
-	void createDatabase(string target)
-	{
-		log("Creating new database from schema");
-		ensurePathExists(target);
-		enforce(spawnProcess(["sqlite3", target], File("schema.sql", "rb")).wait() == 0, "sqlite3 failed");
-	}
+CREATE UNIQUE INDEX [CommitIndex] ON [Commits] (
+	[Commit] ASC
+);
 
-	if (!dbFileName.exists)
-		atomic!createDatabase(dbFileName);
+CREATE TABLE [Results] (
+	[TestID] VARCHAR(100) NOT NULL,
+	[Commit] CHAR(40) NOT NULL,
+	[Value] INTEGER NOT NULL,
+	[Error] TEXT NULL
+);
 
-	db = new SQLite(dbFileName);
+CREATE UNIQUE INDEX [ResultIndex] ON [Results] (
+	[TestID] ASC,
+	[Commit] ASC
+);
+SQL",
+		// Make [Commits].[Error] a string
+		q"SQL
+ALTER TABLE [Commits] RENAME TO [Commits_OLD];
+CREATE TABLE [Commits] (
+	[Commit] CHAR(40) NOT NULL,
+	[Message] TEXT NOT NULL,
+	[Time] INTEGER NOT NULL,
+	[Error] TEXT NULL
+);
+INSERT INTO [Commits] ([Commit], [Message], [Time], [Error])
+	SELECT [Commit], [Message], [Time],
+		CASE [Error]
+			WHEN 0 THEN NULL
+			WHEN 1 THEN "(unknown)"
+		END
+	FROM [Commits_OLD];
+DROP TABLE [Commits_OLD];
+SQL",
+	]);
 }
 
-SQLite.PreparedStatement query(string sql)
-{
-	static SQLite.PreparedStatement[string] cache;
-	if (auto pstatement = sql in cache)
-		return *pstatement;
-	return cache[sql] = db.prepare(sql).enforce("Statement compilation failed: " ~ sql);
-}
+SQLite.PreparedStatement query(string sql)() { return database.stmt!sql(); }
+SQLite.PreparedStatement query(string sql)   { return database.stmt(sql);  }
