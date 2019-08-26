@@ -18,10 +18,7 @@ void main(string[] args)
 	if (args.length > 1)
 		commits = args[1..$];
 	else
-	{
-		d.getMetaRepo().needRepo();
 		commits = [d.getMetaRepo().getRef("origin/master")];
-	}
 	if (noCache)
 		d.config.local.cache = null;
 
