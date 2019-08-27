@@ -68,8 +68,8 @@ struct ScoreFactors
 	int untested    =  100; /// total budget, awarded in full if never tested
 
 	/// Prefer commits between big differences in test results:
-	int diffMax     = 1000; /// max points (for 100% difference)
-	int diffExact   =    5; /// multiplier for "exact" tests
+	int diffMax     = 5000; /// max points (for 100% difference)
+	int diffInexact =  100; /// penalty divisor for inexact tests
 }
 ScoreFactors scoreFactors;
 
@@ -154,8 +154,8 @@ ToDoEntry[] getToDo()
 					auto v0 = min(value, lastValue);
 					auto v1 = max(value, lastValue);
 					auto points = cast(int)(scoreFactors.diffMax * (v1-v0) / v1);
-					if (test.exact)
-						points *= scoreFactors.diffExact;
+					if (!test.exact)
+						points /= scoreFactors.diffInexact;
 					diffPoints[bestIntermediaryIndex] += points;
 				}
 
