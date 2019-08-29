@@ -44,6 +44,7 @@ void main()
 
 	loadInfo();
 
+mainLoop:
 	while (true)
 	{
 		update();
@@ -61,7 +62,7 @@ void main()
 			runTests(entry.commit);
 
 			if (Clock.currTime - start > updateInterval)
-				break;
+				continue mainLoop;
 		}
 
 		log("Idling...");
