@@ -1377,6 +1377,17 @@ $(function () {
       $('#graphs h3').remove();
       gPlot = new Plot($('#graphs'));
       selectTest(gCurrentTestID);
+
+      // Show stats
+      let stats =
+          '<span>' +
+          'Have ' + data.stats.numCommits +
+          ' commits (since ' + data.stats.lastCommitTime + '), ' +
+          data.stats.numCachedCommits + ' built (' + Math.trunc(data.stats.numCachedCommits * 100 / data.stats.numCommits) + '%)' +
+          '</span> | <span>' +
+          'Test coverage: ' + Math.trunc(data.stats.numResults * 100 / (data.tests.length * data.stats.numCommits)) +
+          '%</span>';
+      $('#page-footer').html(stats);
     },
     error: function(xhr, status, error) {
       $('#graphs h3').text("An error occured while loading the graph data (" + url + ")");

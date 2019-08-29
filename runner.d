@@ -73,9 +73,24 @@ struct ScoreFactors
 }
 ScoreFactors scoreFactors;
 
-/// What should we build/test next?
-ToDoEntry[] getToDo()
+struct Stats
 {
+	size_t numCommits, numCachedCommits;
+	string lastCommitTime;
+	size_t numResults;
+}
+
+struct ToDo
+{
+	ToDoEntry[] entries;
+	Stats stats;
+}
+
+/// What should we build/test next?
+ToDo getToDo()
+{
+	ToDo result;
+
 	log("Finding things to do...");
 
 	log("Getting log...");
@@ -178,7 +193,21 @@ ToDoEntry[] getToDo()
 
 	auto index = new size_t[commits.length];
 	scores.makeIndex!"a>b"(index);
-	return index.map!(i => ToDoEntry(commits[i], scores[i])).array();
+
+	result.entries = index.map!(i => ToDoEntry(commits[i], scores[i])).array();
+
+	{
+		result.stats.numCommits = commits.length;
+		foreach (commit; commits)
+			if (cacheState.get(commit.hash, false))
+				result.stats.numCachedCommits++;
+		result.stats.lastCommitTime = commits[$-1].time.toString();
+
+		foreach (commit, results; testResults)
+			result.stats.numResults += results.length;
+	}
+
+	return result;
 }
 
 /// Build (or pull from cache) a commit for testing

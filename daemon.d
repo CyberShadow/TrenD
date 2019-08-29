@@ -44,18 +44,16 @@ void main()
 
 	loadInfo();
 
-	update();
-
-	atomic!saveJson(jsonPath);
-
 	while (true)
 	{
+		update();
 		auto todo = getToDo();
+		atomic!saveJson(jsonPath, todo.stats);
 
 		auto start = Clock.currTime;
 
 		log("Running tests...");
-		foreach (entry; todo)
+		foreach (entry; todo.entries)
 		{
 			debug log("Running tests for commit: %s (%s, score %d)".format(entry.commit.hash, entry.commit.time, entry.score));
 			if (!prepareCommit(entry.commit))
@@ -66,12 +64,8 @@ void main()
 				break;
 		}
 
-		atomic!saveJson(jsonPath);
-
 		log("Idling...");
 		Thread.sleep(idleDuration);
-
-		update();
 	}
 }
 
@@ -97,7 +91,7 @@ void update()
 	history = d.getMetaRepo().getSubmoduleHistory(["origin/master"]);
 }
 
-void saveJson(string target)
+void saveJson(string target, Stats stats)
 {
 	log("Saving results...");
 
@@ -125,6 +119,8 @@ void saveJson(string target)
 			bool exact;
 		}
 		Test[] tests;
+
+		Stats stats;
 	}
 	JsonData data;
 
@@ -134,6 +130,7 @@ void saveJson(string target)
 		data.results ~= JsonData.Result(testID, commit, value, error);
 	foreach (test; tests)
 		data.tests ~= JsonData.Test(test.name, test.description, test.id, test.unit, test.exact);
+	data.stats = stats;
 
 	auto json = data.toJson();
 	import ae.utils.gzip, ae.sys.data;

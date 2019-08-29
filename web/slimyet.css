@@ -553,3 +553,18 @@ body.faqPage {
   width: 100px;
   height: 100px;
 }
+
+#page-footer {
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  border-top: 1px solid black;
+  color: black;
+  background-color: white;
+  text-align: center;
+}
+
+#page-footer > span {
+  display: inline-block;
+}
