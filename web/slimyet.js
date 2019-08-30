@@ -934,6 +934,16 @@ function getCurrentTestIDs() {
 
 // Recreate data with new gCurrentTestID etc.
 Plot.prototype.updateData = function() {
+  var self = this;
+  // Put visible axes on either sides
+  var index = 0;
+  jQuery.each(getCurrentTestIDs(), function(i, testID) {
+    var unit = gTests[testID].unit;
+    var axisIndex = self.unitAxes[unit];
+    var axis = self.flot.getAxes()['y' + (axisIndex ? 1 + axisIndex : '') + 'axis'];
+    axis.options.position = ['left', 'right'][index++ % 2];
+  });
+
   var range = this.zoomRange;
   var newseries = this._buildSeries(range[0], range[1]);
   this.flot.setData(newseries);
