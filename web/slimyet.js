@@ -207,7 +207,7 @@ function logError(obj) {
 function prettyDate(aTimestamp) {
   // If the date is exactly midnight, remove the time portion.
   // (overview data is coalesced by day by default)
-  return new Date(aTimestamp * 1000).toUTCString().replace('00:00:00 GMT', '');
+  return new Date(aTimestamp * 1000).toISOString().replace("T", " ").replace(".000Z", "");
 }
 
 function mkDelta(mem, lastmem) {
