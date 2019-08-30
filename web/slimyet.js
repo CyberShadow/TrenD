@@ -508,42 +508,26 @@ Tooltip.prototype.showBuild = function(label, series, buildset, buildindex, seri
     valobj.append(mkDelta(value, series[buildindex - 1][1]));
   }
   ttinner.append(valobj);
-  ttinner.append($.new('b').text('commit '));
-  ttinner.append(mkGitLink(rev));
-  if (build['lastrev']) {
-    // Multiple revisions, add range link
-    ttinner.append(' .. ');
-    ttinner.append(mkGitLink(build['lastrev']));
-  }
-  if (buildindex > 0) {
-    // Add pushlog link
-    // Because 'merged' points use median values for the graph data, we
-    // show the broadest push log possible when dealing with them
-    var prevbuild = buildset[buildindex - 1];
-    if (prevbuild && prevbuild['firstrev']) {
-      var prevrev = prevbuild['firstrev'];
-      var pushrev = build['lastrev'] ? build['lastrev'] : rev;
-      //var pushlog = gHgBaseUrl + "/pushloghtml?fromchange=" + prevrev + "&tochange=" + pushrev;
-      var pushlog = gitRangeURL(prevrev, pushrev);
-      ttinner.append(" (");
-      ttinner.append($.new('a', { 'href' : pushlog, 'target' : '_blank' })
-                     .text("commit list"));
-      ttinner.append(")");
-    }
-  }
-  // Time
-  ttinner.append($.new('p').addClass('timestamp').text(prettyDate(build['time'])));
-  // Commit message
   if (!build['lastrev']) {
+    ttinner.append($.new('b').text('commit '));
+    ttinner.append(mkGitLink(rev));
+    ttinner.append($.new('p').addClass('timestamp').text(prettyDate(build['timerange'][0])));
     ttinner.append($.new('p').addClass('commit-message').text(gCommits[rev].message));
-  }
-  // Full timerange (shown on zoom)
-  if (build['lastrev'] && build['timerange']) {
-    var timerange = $.new('p').addClass('timerange').hide();
-    timerange.append(prettyDate(build['timerange'][0]));
-    timerange.append(' — ');
-    timerange.append(prettyDate(build['timerange'][1]));
-    ttinner.append(timerange);
+  } else {
+    // Multiple revisions, add range link
+    ttinner.append($.new('b').text('commit range'));
+    ttinner.append(":");
+    ttinner.append($.new('p')
+                   .append(mkGitLink(rev))
+                   .append(" (")
+                   .append(prettyDate(build['timerange'][0]))
+                   .append(")"));
+    ttinner.append($.new('hr').css('border-top', '2px dotted #888'));
+    ttinner.append($.new('p')
+                   .append(mkGitLink(build['lastrev']))
+                   .append(" (")
+                   .append(prettyDate(build['timerange'][1]))
+                   .append(")"));
   }
   this.append(ttinner);
 }
@@ -1092,32 +1076,15 @@ Plot.prototype._buildSeries = function(start, stop) {
   return seriesData;
 }
 
-// The zoomed build-detail view for builds we represent. Requires the tooltip be
-// visible and initialized with showBuild();
-Tooltip.prototype.buildDetail = function() {
-  // Switch to showing full timerange until unzoomed
-  var timerangeobj = this.content.find('.timerange');
-  if (timerangeobj.length) {
-    var timeobj = this.content.find('.timestamp');
-    timeobj.insertBefore(timerangeobj);
-    timeobj.addClass('fading').fadeOut(250);
-    timerangeobj.removeClass('fading').fadeIn(250);
-    this.onUnzoom(function () {
-      timerangeobj.insertBefore(timeobj);
-      timerangeobj.addClass('fading').fadeOut(250);
-      timeobj.removeClass('fading').fadeIn(250);
-    });
-  }
-
+Tooltip.prototype.handleClick = function() {
   var self = this;
   var build = this.build_set[this.build_index];
 
   if ('lastrev' in build) {
-    // Build is a series. We need to make sure we have full res data to
-    // enumerate all the builds in this range.
+    // Multiple commits - open commit list on Bitbucket d.git repo
     window.open(gitRangeURL(build['firstrev'], build['lastrev']), '_blank');
   } else {
-    // Only one build, just display memory view
+    // Single commit - go to the GitHub pull request page
     window.open(gitURL(build['firstrev']), '_blank');
   }
 }
@@ -1126,7 +1093,7 @@ Tooltip.prototype.buildDetail = function() {
 Plot.prototype.onClick = function(item) {
   if (item) {
     // Clicked an item, switch tooltip to build detail mode
-    this.tooltip.buildDetail();
+    this.tooltip.handleClick();
   } else if (this.highlighted) {
     // Clicked on highlighted zoom space, do a graph zoom
 
