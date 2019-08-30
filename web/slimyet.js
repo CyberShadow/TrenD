@@ -488,7 +488,7 @@ Tooltip.prototype.showBuild = function(label, series, buildset, buildindex, seri
   var ttinner = $.new('p');
   var valobj = $.new('p').text(formatUnit(value) + ' ');
   // Delta
-  if (buildindex > 0) {
+  if (buildindex > 0 && series[buildindex - 1][1] !== null) {
     valobj.append(mkDelta(value, series[buildindex - 1][1]));
   }
   ttinner.append(valobj);
