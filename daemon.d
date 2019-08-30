@@ -70,28 +70,6 @@ mainLoop:
 	}
 }
 
-/// Fetch our Git repositories
-void update(ref State state)
-{
-	log("Updating...");
-
-	while (true)
-	{
-		try
-		{
-			d.update();
-			break;
-		}
-		catch (Exception e)
-		{
-			log("Update error: " ~ e.msg);
-			Thread.sleep(updateInterval);
-		}
-	}
-
-	state.history = d.getMetaRepo().getSubmoduleHistory(["origin/master"]);
-}
-
 void saveJson(string target, Stats stats)
 {
 	log("Saving results...");

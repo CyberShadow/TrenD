@@ -11,6 +11,8 @@ module runner;
     and holds the error message preventing that test from running.
  */
 
+import core.thread;
+
 import std.algorithm;
 import std.conv;
 import std.range;
@@ -46,6 +48,29 @@ State loadState()
 		state.testResults[commit][testID] = value;
 
 	return state;
+}
+
+/// Fetch our Git repositories
+void update(ref State state)
+{
+	log("Updating...");
+
+	while (true)
+	{
+		try
+		{
+			d.update();
+			break;
+		}
+		catch (Exception e)
+		{
+			// Network error?
+			log("Update error: " ~ e.msg);
+			Thread.sleep(1.minutes);
+		}
+	}
+
+	state.history = d.getMetaRepo().getSubmoduleHistory(["origin/master"]);
 }
 
 alias LogEntry = DManager.LogEntry;
