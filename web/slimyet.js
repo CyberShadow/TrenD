@@ -934,12 +934,12 @@ function getCurrentTestIDs() {
 
 // Recreate data with new gCurrentTestID etc.
 Plot.prototype.updateData = function() {
-    var range = this.zoomRange;
-    var newseries = this._buildSeries(range[0], range[1]);
-    this.flot.setData(newseries);
-    this.flot.setupGrid();
-    this.flot.draw();
-    this._drawAnnotations();
+  var range = this.zoomRange;
+  var newseries = this._buildSeries(range[0], range[1]);
+  this.flot.setData(newseries);
+  this.flot.setupGrid();
+  this.flot.draw();
+  this._drawAnnotations();
 };
 
 // Takes two timestamps and builds a list of series based on this plot's axis
