@@ -54,10 +54,6 @@ var gTooltipOffset = 'tooltipoffset' in gQueryVars ? +gQueryVars['tooltipoffset'
 // Default to 150, or 0 (disabled) if nocondense is supplied
 var gMaxPoints = gQueryVars['maxpoints'] ? +gQueryVars['maxpoints'] : (gQueryVars['nocondense'] ? 0 : 150);
 
-// How much time between successfully tested builds on the graph should result
-// in a disjointed line. Default 24h
-var gDisjointTime = 'disjointtime' in gQueryVars ? +gQueryVars['disjointtime'] : (60 * 60 * 24);
-
 // Merge tooltips if their position is within this many pixels
 var gAnnoMergeDist = 'annotationmerge' in gQueryVars ? +gQueryVars['annotationmerge'] : 50;
 
