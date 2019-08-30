@@ -1326,7 +1326,6 @@ $(function () {
       // of superfluous builds that have null for all series values we care
       // about. For instance, the mobile series all start Dec 2012, so all
       // builds prior to that are not useful in mobile mode.
-      gData.commits.sort(function(a, b) { return a.time-b.time; });
       gDataRange = [ null, null ];
       for (var ind = 0; ind < gData.commits.length; ind++) {
         var t = gData.commits[ind].time;
