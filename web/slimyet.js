@@ -164,6 +164,7 @@ var gTests = {};
 
 // Current test
 var gCurrentTestID = 'program-hello-binarysize';
+var gPinnedTestIDs = {};
 
 // Our plot
 var gPlot;
@@ -211,17 +212,17 @@ function prettyDate(aTimestamp) {
   return new Date(aTimestamp * 1000).toISOString().replace("T", " ").replace(".000Z", "");
 }
 
-function mkDelta(mem, lastmem) {
+function mkDelta(mem, lastmem, unit) {
   var delta = mem - lastmem;
   var obj = $.new('span').addClass('delta');
   if (delta < 0) {
-    obj.text('Δ -'+formatUnit(-delta));
+    obj.text('Δ -'+formatUnit(-delta, unit));
     obj.addClass('neg');
   } else if (delta == 0) {
-    obj.text('Δ '+formatUnit(delta));
+    obj.text('Δ '+formatUnit(delta, unit));
     obj.addClass('equ');
   } else {
-    obj.text('Δ '+formatUnit(delta));
+    obj.text('Δ '+formatUnit(delta, unit));
     obj.addClass('pos');
   }
   if (Math.abs(delta) / mem > 0.02)
@@ -315,7 +316,6 @@ function formatAmount(raw, ref) {
 }
 
 function formatUnit(raw, unit, ref) {
-  if (!unit) unit = gTests[gCurrentTestID].unit;
   if (unit=='bytes')
     return formatBytes(raw, ref);
   if (unit=='nanoseconds')
@@ -490,7 +490,7 @@ Tooltip.prototype._fadeOut = function() {
 //              it may have been condensed)
 // buildindex - index of this build in buildset
 // series     - the series we are showing
-Tooltip.prototype.showBuild = function(label, series, buildset, buildindex, seriesname) {
+Tooltip.prototype.showBuild = function(label, series, buildset, buildindex, seriesname, seriesindex) {
   this.empty();
   this.build_series = series;
   this.build_seriesname = seriesname;
@@ -500,15 +500,18 @@ Tooltip.prototype.showBuild = function(label, series, buildset, buildindex, seri
   var value = series[buildindex][1];
   var build = buildset[buildindex];
   var rev = build['firstrev'];
+  var unit = gTests[seriesname].unit;
 
   // Label
   //this.append($.new('h3').text(label));
   // Build link / time
   var ttinner = $.new('p');
-  var valobj = $.new('p').text(formatUnit(value) + ' ');
+  if (getCurrentTestIDs().length > 1)
+    ttinner.append($.new('span').css('color', gDarkColorsFirst[seriesindex]).text(gTests[seriesname].name), ': ');
+  var valobj = $.new('p').text(formatUnit(value, unit) + ' ');
   // Delta
   if (buildindex > 0 && series[buildindex - 1][1] !== null) {
-    valobj.append(mkDelta(value, series[buildindex - 1][1]));
+    valobj.append(mkDelta(value, series[buildindex - 1][1], unit));
   }
   ttinner.append(valobj);
   if (!build['lastrev']) {
@@ -650,9 +653,17 @@ function Plot(appendto) {
     return;
   }
 
-  this.axis = {};
-  for (var testID in gTests)
-    this.axis[testID] = gTests[testID].name;
+  var axisUnits = [];
+  this.unitAxes = {};
+  for (var testID in gTests) {
+    var unit = gTests[testID].unit;
+    if (!(unit in this.unitAxes)) {
+      var axisIndex = axisUnits.length;
+      axisUnits.push(unit);
+      this.unitAxes[unit] = axisIndex;
+    }
+  }
+
   this.zoomed = false;
 
   this.dataRange = gDataRange;
@@ -691,7 +702,7 @@ function Plot(appendto) {
               var buildinf = series.buildinfo[j];
               if ('lastrev' in buildinf)
                 continue;
-              var color = gDarkColorsFirst[0];
+              var color = gDarkColorsFirst[i];
               var d = series.data[j];
               if (d[1] === null) continue;
               var x = offset.left + axes.xaxis.p2c(d[0]);
@@ -790,39 +801,41 @@ function Plot(appendto) {
             releaseName;
         }
       },
-      yaxis: {
-        ticks: function(axis) {
-          // If you zoom in and there are no points to show, axis.max will be
-          // very small.  So let's say that we'll always graph at least 32mb.
-          var minMax = gTests[gCurrentTestID].unit == 'bytes' ? 1 * 1024 : 1000;
-          var axisMax = Math.max(axis.max, minMax);
+      yaxes: jQuery.map(axisUnits, function(unit, unitIndex) {
+        return {
+          ticks: function(axis) {
+            // If you zoom in and there are no points to show, axis.max will be
+            // very small.  So let's say that we'll always graph at least 32mb.
+            var minMax = unit == 'bytes' ? 1 * 1024 : 1000;
+            var axisMax = Math.max(axis.max, minMax);
 
-          var approxNumTicks = 10;
-          var interval = axisMax / approxNumTicks;
+            var approxNumTicks = 10;
+            var interval = axisMax / approxNumTicks;
 
-          // Round interval up to nearest power of 2.
-          if (gTests[gCurrentTestID].unit == 'bytes')
-            interval = Math.pow(2, Math.ceil(Math.log(interval) / Math.log(2)));
-          else
-            interval = Math.pow(10, Math.ceil(Math.log(interval) / Math.log(10)));
+            // Round interval up to nearest power of 2.
+            if (unit == 'bytes')
+              interval = Math.pow(2, Math.ceil(Math.log(interval) / Math.log(2)));
+            else
+              interval = Math.pow(10, Math.ceil(Math.log(interval) / Math.log(10)));
 
-          // Round axis.max up to the next interval.
-          var max = Math.ceil(axisMax / interval) * interval;
+            // Round axis.max up to the next interval.
+            var max = Math.ceil(axisMax / interval) * interval;
 
-          // Let res be [0, interval, 2 * interval, 3 * interval, ..., max].
-          var res = [];
-          for (var i = 0; i <= max; i += interval) {
-            res.push(i);
+            // Let res be [0, interval, 2 * interval, 3 * interval, ..., max].
+            var res = [];
+            for (var i = 0; i <= max; i += interval) {
+              res.push(i);
+            }
+
+            return res;
+          },
+
+          tickFormatter: function(val, axis) {
+            //return val / (1024 * 1024) + ' MiB';
+            return formatUnit(val, unit, axis.max);
           }
-
-          return res;
-        },
-
-        tickFormatter: function(val, axis) {
-          //return val / (1024 * 1024) + ' MiB';
-          return formatUnit(val, gTests[gCurrentTestID].unit, axis.max);
-        }
-      },
+        };
+      }),
       legend: {
         container: this.legendContainer
       },
@@ -910,6 +923,15 @@ Plot.prototype.setZoomRange = function(range, nosync) {
       this.showHighlight(this._highlightLoc, this._highlightWidth);
 };
 
+function getCurrentTestIDs() {
+  var tests = [];
+  for (var testID in gTests) {
+    if (testID == gCurrentTestID || testID in gPinnedTestIDs)
+      tests.push(testID);
+  }
+  return tests;
+}
+
 // Recreate data with new gCurrentTestID etc.
 Plot.prototype.updateData = function() {
     var range = this.zoomRange;
@@ -925,15 +947,12 @@ Plot.prototype.updateData = function() {
 Plot.prototype._buildSeries = function(start, stop) {
   var self = this; // for closures
 
-  // Push a dummy null point at the beginning of the series to force the zoom to
-  // start exactly there
-
-  var builds = [ { time: start, timerange: [ start, start ] } ];
+  var builds = [];
   var data = {};
 
-  var testIDs = [gCurrentTestID];
+  var testIDs = getCurrentTestIDs();
   testIDs.forEach(function(axis) {
-    data[gCurrentTestID] = [ [ start, null ] ];
+    data[axis] = [];
   });
 
   // Grouping distance
@@ -945,6 +964,7 @@ Plot.prototype._buildSeries = function(start, stop) {
       data[axis].push([ time, null ]);
     });
   }
+  pushNull(start);
 
   function pushdp(series, buildinf, ctime, haveNull, haveNonNull) {
     // Push a datapoint (one or more commits) onto builds/data
@@ -1008,73 +1028,78 @@ Plot.prototype._buildSeries = function(start, stop) {
 
   for (var commitIndex in gData.commits) {
     var commit = gData.commits[commitIndex];
+
+    if (start !== undefined && commit.time < start) continue;
+    if (stop !== undefined && commit.time > stop) break;
+
+    var time;
+    if (gQueryVars['evenspacing']) {
+      time = start + commitIndex * (stop - start) / gData.commits.length;
+    } else {
+      time = groupin(commit.time);
+    }
+
+    if (time != ctime) {
+      pushdp(series, buildinf, ctime, haveNull, haveNonNull);
+      ctime = time;
+      series = {};
+      buildinf = { time: time };
+      haveNull = false;
+      haveNonNull = false;
+    }
+
+    // Full series uses non-merged syntax, which is just build['revision']
+    // but we might be using overview data and hence merged syntax
+    // (firstrev, lastrev)
+    var rev = commit.commit;
+    var starttime = commit.time;
+    var endtime = commit.time;
+    if (!buildinf['firstrev']) {
+      buildinf['firstrev'] = rev;
+      buildinf['timerange'] = [ starttime, endtime ];
+      buildinf['numrevs'] = 1;
+    } else {
+      buildinf['lastrev'] = rev;
+      buildinf['timerange'][1] = endtime;
+      buildinf['numrevs']++;
+    }
+
     for (var testIndex in testIDs) {
-      var testID = testIDs[testIndex];
+      var axis = testIDs[testIndex];
 
-      if (start !== undefined && commit.time < start) continue;
-      if (stop !== undefined && commit.time > stop) break;
-
-      var time;
-      if (gQueryVars['evenspacing']) {
-        time = start + commitIndex * (stop - start) / gData.commits.length;
-      } else {
-        time = groupin(commit.time);
+      var value = null;
+      if (axis in commit.results) {
+        var result = commit.results[axis];
+        if (result.error === null)
+          value = result.value;
       }
 
-      if (time != ctime) {
-        pushdp(series, buildinf, ctime, haveNull, haveNonNull);
-        ctime = time;
-        series = {};
-        buildinf = { time: time };
-        haveNull = false;
-        haveNonNull = false;
-      }
-
-      // Full series uses non-merged syntax, which is just build['revision']
-      // but we might be using overview data and hence merged syntax
-      // (firstrev, lastrev)
-      var rev = commit.commit;
-      var starttime = commit.time;
-      var endtime = commit.time;
-      if (!buildinf['firstrev']) {
-        buildinf['firstrev'] = rev;
-        buildinf['timerange'] = [ starttime, endtime ];
-        buildinf['numrevs'] = 1;
-      } else {
-        buildinf['lastrev'] = rev;
-        buildinf['timerange'][1] = endtime;
-        buildinf['numrevs']++;
-      }
-      testIDs.forEach(function(axis) {
-        var value = null;
-        if (axis in commit.results) {
-          var result = commit.results[axis];
-          if (result.error === null)
-            value = result.value;
-        }
-
-        if (!series[axis]) series[axis] = [];
-        // Push all non-null datapoints onto list, pushdp() flattens
-        // this list, finding its midpoint/min/max.
-        series[axis].push(value);
-        if (value === null)
-          haveNull = true;
-        else
-          haveNonNull = true;
-      });
+      if (!series[axis]) series[axis] = [];
+      // Push all non-null datapoints onto list, pushdp() flattens
+      // this list, finding its midpoint/min/max.
+      series[axis].push(value);
+      if (value === null)
+        haveNull = true;
+      else
+        haveNonNull = true;
     }
   }
   pushdp(series, buildinf, ctime, haveNull, haveNonNull);
 
   // Push a dummy null point at the end of the series to force the zoom to end
   // exactly there
-  builds.push({ time: start, timerange: [ start, start ] });
-  builds.push({ time: stop, timerange: [ stop, stop ] });
+  pushNull(start);
+  pushNull(stop);
   var seriesData = [];
-  for (var axis in data) {
-    data[axis].push([ start, null ]);
-    data[axis].push([ stop, null ]);
-    seriesData.push({ name: axis, label: this.axis[axis], data: data[axis], buildinfo: builds });
+  for (var testID in data) {
+    if (data[testID].length != builds.length) alert('data/buildinfo length mismatch');
+    seriesData.push({
+      name: testID,
+      label: gTests[testID].name,
+      data: data[testID],
+      buildinfo: builds,
+      yaxis: 1 + this.unitAxes[gTests[testID].unit]
+    });
   }
 
   return seriesData;
@@ -1275,7 +1300,8 @@ Plot.prototype.onHover = function(item, pos) {
                            item.series.data,
                            item.series.buildinfo,
                            item.dataIndex,
-                           item.series.name);
+                           item.series.name,
+                           item.seriesIndex);
 
     // Tooltips move relative to the graphContainer
     var offset = this.container.offset();
@@ -1385,6 +1411,13 @@ $(function () {
       });
   });
 
+  $('#pin').change(function() {
+    if (this.checked)
+      gPinnedTestIDs[gCurrentTestID] = true;
+    else
+      delete gPinnedTestIDs[gCurrentTestID];
+  });
+
   var adjectives = ['slim', 'fast', 'lean'];
   var adjectiveIndex = 0;
   var rotating = false;
@@ -1476,6 +1509,7 @@ function createTestSelectors(targetPath) {
 function renderTest(testID) {
   gCurrentTestID = testID;
   gPlot.updateData();
+  $('#pin').prop('checked', testID in gPinnedTestIDs);
   $('#test-id').text(testID);
   $('#test-name').text(gTests[testID].name.replace(/ - /g, ' – '));
   $('#test-description').html(gTests[testID].description);
