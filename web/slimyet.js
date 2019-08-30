@@ -1,4 +1,5 @@
 /* -*- fill-column: 80; js-indent-level: 2; -*- */
+/*jshint sub:true,loopfunc:true */
 /*
  * Copyright © 2012 Mozilla Corporation
  *
@@ -20,9 +21,9 @@ var gQueryVars = (function () {
     }
   }
   if (document.location.search)
-    expand(document.location.search.slice(1), '&', '=')
+    expand(document.location.search.slice(1), '&', '=');
   if (document.location.hash)
-    expand(document.location.hash.slice(1), ',', ':')
+    expand(document.location.hash.slice(1), ',', ':');
   return ret;
 })();
 
@@ -195,7 +196,7 @@ function logMsg(obj) {
 function logError(obj) {
   if (window.console) {
     if (window.console.error)
-      window.console.error(obj)
+      window.console.error(obj);
     else if (window.console.log)
       window.console.log("ERROR: " + obj);
   }
@@ -388,7 +389,7 @@ function getBuildTimeRange(firstbuild, lastbuild)
 // A tooltip that can be positioned relative to its parent via .hover(),
 // or 'zoomed' to inflate and cover its parent via .zoom()
 function Tooltip(parent) {
-  if ((!this instanceof Tooltip)) {
+  if (!(this instanceof Tooltip)) {
     logError("Tooltip() used incorrectly");
     return;
   }
@@ -417,18 +418,18 @@ function Tooltip(parent) {
   this.faded = true;
 }
 
-Tooltip.prototype.isZoomed = function () { return this.obj.is('.zoomed'); }
+Tooltip.prototype.isZoomed = function () { return this.obj.is('.zoomed'); };
 
 Tooltip.prototype.append = function(obj) {
   this.content.append(obj);
-}
+};
 
 Tooltip.prototype.empty = function() {
   this.content.empty();
   this.seriesname = null;
   this.buildset = null;
   this.buildindex = null;
-}
+};
 
 Tooltip.prototype.hover = function(x, y, nofade) {
   if (this.isZoomed())
@@ -457,7 +458,7 @@ Tooltip.prototype.hover = function(x, y, nofade) {
   // Show tooltip
   if (!nofade)
     this._fadeIn();
-}
+};
 
 Tooltip.prototype.unHover = function() {
   if (this.isZoomed())
@@ -467,19 +468,19 @@ Tooltip.prototype.unHover = function() {
     // Don't actually fade till the mouse goes away, see handlers in constructor
     this._fadeOut();
   }
-}
+};
 
 Tooltip.prototype._fadeIn = function() {
   if (this.faded) {
     this.obj.stop().fadeTo(200, 1);
     this.faded = false;
   }
-}
+};
 
 Tooltip.prototype._fadeOut = function() {
   this.faded = true;
   this.obj.stop().fadeTo(200, 0, function () { $(this).hide(); });
-}
+};
 
 // value      - Value of displayed point
 // label      - tooltip header/label
@@ -530,12 +531,12 @@ Tooltip.prototype.showBuild = function(label, series, buildset, buildindex, seri
                    .append(")"));
   }
   this.append(ttinner);
-}
+};
 
 Tooltip.prototype.onUnzoom = function(callback) {
   if (this.isZoomed())
     this.onUnzoomFuncs.push(callback);
-}
+};
 
 Tooltip.prototype.unzoom = function() {
   if (this.isZoomed() && !this.obj.is(':animated'))
@@ -555,15 +556,15 @@ Tooltip.prototype.unzoom = function() {
     });
 
     var callback;
-    while (callback = this.onUnzoomFuncs.pop())
+    while ((callback = this.onUnzoomFuncs.pop()))
       callback.apply(this);
 
     var url;
-    while (url = gObjectURLs.pop()) {
+    while ((url = gObjectURLs.pop())) {
       window.URL.revokeObjectURL(url);
     }
   }
-}
+};
 
 //
 // Ajax for getting more graph data
@@ -571,7 +572,7 @@ Tooltip.prototype.unzoom = function() {
 
 // Fetch the series given by name (see gGraphData['allseries']), call success
 // or fail callback. Can call these immediately if the data is already available
-var gPendingFullData = {}
+var gPendingFullData = {};
 function getFullSeries(dataname, success, fail) {
   if (dataname in gFullData) {
     if (success instanceof Function)
@@ -859,7 +860,6 @@ function Plot(appendto) {
   this._drawAnnotations();
 
   this.tooltip = new Tooltip(this.container);
-  var self = this;
   this.obj.bind("plotclick", function(event, pos, item) { self.onClick(item); });
   this.obj.bind("plothover", function(event, pos, item) { self.onHover(item, pos); });
   this.obj.bind("mouseout", function(event) { self.hideHighlight(); });
@@ -906,7 +906,7 @@ Plot.prototype.setZoomRange = function(range, nosync) {
     // The highlight has the wrong range now that we mucked with the graph
     if (this.highlighted)
       this.showHighlight(this._highlightLoc, this._highlightWidth);
-}
+};
 
 // Recreate data with new gCurrentTestID etc.
 Plot.prototype.updateData = function() {
@@ -916,7 +916,7 @@ Plot.prototype.updateData = function() {
     this.flot.setupGrid();
     this.flot.draw();
     this._drawAnnotations();
-}
+};
 
 // Takes two timestamps and builds a list of series based on this plot's axis
 // suitable for passing to flot - condensed to try to hit gMaxPoints.
@@ -1076,7 +1076,7 @@ Plot.prototype._buildSeries = function(start, stop) {
   }
 
   return seriesData;
-}
+};
 
 Tooltip.prototype.handleClick = function() {
   var self = this;
@@ -1089,7 +1089,7 @@ Tooltip.prototype.handleClick = function() {
     // Single commit - go to the GitHub pull request page
     window.open(gitURL(build['firstrev']), '_blank');
   }
-}
+};
 
 // Either zoom in on a datapoint or trigger a graph zoom or do nothing.
 Plot.prototype.onClick = function(item) {
@@ -1116,7 +1116,7 @@ Plot.prototype.onClick = function(item) {
     zoomrange[1] = Math.max(this.highlightRange[1], buildrange[1]);
     this.setZoomRange(zoomrange);
   }
-}
+};
 
 Plot.prototype._drawAnnotations = function() {
   var self = this;
@@ -1204,7 +1204,7 @@ Plot.prototype._drawAnnotations = function() {
       div.mouseout(function() { self.tooltip.unHover(); });
     })();
   }
-}
+};
 
 // Shows the zoom/highlight bar centered [location] pixels from the left of the
 // graph.
@@ -1250,14 +1250,14 @@ Plot.prototype.showHighlight = function(location, width) {
     left: left + 'px',
     width: width + 'px'
   });
-}
+};
 
 Plot.prototype.hideHighlight = function() {
   if (this.highlighted) {
     this.highlighted = false;
     this.zoomSelector.stop().fadeTo(250, 0);
   }
-}
+};
 
 // If we're hovering over a point, show a tooltip. Otherwise, show the
 // zoom selector if we're not beyond our zoom-in limit
@@ -1293,7 +1293,7 @@ Plot.prototype.onHover = function(item, pos) {
     this.showHighlight(left, gHighlightWidth);
   }
   this.hoveredItem = item;
-}
+};
 
 
 $(function () {
@@ -1312,7 +1312,8 @@ $(function () {
       // about. For instance, the mobile series all start Dec 2012, so all
       // builds prior to that are not useful in mobile mode.
       gDataRange = [ null, null ];
-      for (var ind = 0; ind < gData.commits.length; ind++) {
+      var ind;
+      for (ind = 0; ind < gData.commits.length; ind++) {
         var t = gData.commits[ind].time;
         if (gDataRange[0] === null || t < gDataRange[0])
           gDataRange[0] = t;
@@ -1330,7 +1331,7 @@ $(function () {
       logMsg("Useful data range is [ " + gDataRange + " ]");
 
       gCommits = {};
-      for (var ind = 0; ind < gData.commits.length; ind++) {
+      for (ind = 0; ind < gData.commits.length; ind++) {
         var commit = gData.commits[ind];
         gCommits[commit.commit] = commit;
         commit.results = {};
@@ -1342,7 +1343,7 @@ $(function () {
       }
 
       gTests = {};
-      for (var ind = 0; ind < gData.tests.length; ind++) {
+      for (ind = 0; ind < gData.tests.length; ind++) {
         var test = gData.tests[ind];
         gTests[test.id] = test;
 
@@ -1352,7 +1353,7 @@ $(function () {
         $('#testSelector').append($option);
       }
 
-      for (var ind = 0; ind < gData.results.length; ind++) {
+      for (ind = 0; ind < gData.results.length; ind++) {
         var result = gData.results[ind];
         if (result.commit in gCommits)
           gCommits[result.commit].results[result.testID] = result;
@@ -1363,7 +1364,7 @@ $(function () {
       selectTest(gCurrentTestID);
 
       // Show stats
-      let stats =
+      var stats =
           '<span>' +
           'Have ' + data.stats.numCommits +
           ' commits (since ' + data.stats.lastCommitTime + '), ' +
@@ -1402,7 +1403,7 @@ $(function () {
     $('#header-slim').css('scrollTop', 100);
     $('#header-slim').animate({
       scrollTop: 100//$(".middle").offset().top
-    }, 1000, function() { rotating = false });
+    }, 1000, function() { rotating = false; });
     adjectiveIndex = (adjectiveIndex+1)%3;
   }
   $('#page-header').click(rotateAdjective);
