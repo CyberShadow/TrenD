@@ -42,13 +42,13 @@ void main()
 		std.stdio.stderr = f;
 	}
 
-	loadInfo();
+	auto state = loadState();
 
 mainLoop:
 	while (true)
 	{
-		update();
-		auto todo = getToDo();
+		state.update();
+		auto todo = state.getToDo();
 		atomic!saveJson(jsonPath, todo.stats);
 
 		auto start = Clock.currTime;
@@ -57,9 +57,9 @@ mainLoop:
 		foreach (entry; todo.entries)
 		{
 			debug log("Running tests for commit: %s (%s, score %d)".format(entry.commit.hash, entry.commit.time, entry.score));
-			if (!prepareCommit(entry.commit))
+			if (!state.prepareCommit(entry.commit))
 				continue;
-			runTests(entry.commit);
+			state.runTests(entry.commit);
 
 			if (Clock.currTime - start > updateInterval)
 				continue mainLoop;
@@ -71,7 +71,7 @@ mainLoop:
 }
 
 /// Fetch our Git repositories
-void update()
+void update(ref State state)
 {
 	log("Updating...");
 
@@ -89,7 +89,7 @@ void update()
 		}
 	}
 
-	history = d.getMetaRepo().getSubmoduleHistory(["origin/master"]);
+	state.history = d.getMetaRepo().getSubmoduleHistory(["origin/master"]);
 }
 
 void saveJson(string target, Stats stats)

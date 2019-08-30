@@ -23,25 +23,29 @@ import ae.utils.time.format;
 import common;
 import test;
 
-bool[string] badCommits; /// In-memory cache of un-buildable commits
-long[string][string] testResults; // testResults[commit.hash][test.id] = value
+struct State
+{
+	bool[string] badCommits; /// In-memory cache of un-buildable commits
+	long[string][string] testResults; // testResults[commit.hash][test.id] = value
 
-/// Result of getSubmoduleHistory of the meta-repository.
-/// history[commitHash][submoduleName] == submoduleCommitHash
-string[string][string] history;
+	/// Result of getSubmoduleHistory of the meta-repository.
+	/// history[commitHash][submoduleName] == submoduleCommitHash
+	string[string][string] history;
+}
 
 /// Load data from database on disk at startup
-void loadInfo()
+State loadState()
 {
 	log("Loading existing data...");
 
-	badCommits = null;
+	State state;
 	foreach (string commit; query("SELECT [Commit] FROM [Commits] WHERE [Error] IS NOT NULL").iterate())
-		badCommits[commit] = true;
+		state.badCommits[commit] = true;
 
-	testResults = null;
 	foreach (string commit, string testID, long value; query("SELECT [Commit], [TestID], [Value] FROM [Results]").iterate())
-		testResults[commit][testID] = value;
+		state.testResults[commit][testID] = value;
+
+	return state;
 }
 
 alias LogEntry = DManager.LogEntry;
@@ -87,7 +91,7 @@ struct ToDo
 }
 
 /// What should we build/test next?
-ToDo getToDo()
+ToDo getToDo(/*in*/ ref State state)
 {
 	ToDo result;
 
@@ -98,7 +102,7 @@ ToDo getToDo()
 	commits.reverse(); // oldest first
 
 	log("Getting cache state...");
-	auto cacheState = d.getCacheState(history);
+	auto cacheState = d.getCacheState(state.history);
 
 	log("Calculating...");
 
@@ -139,7 +143,7 @@ ToDo getToDo()
 	foreach (test; tests)
 	{
 		testResultArray[] = 0;
-		foreach (commit, results; testResults)
+		foreach (commit, results; state.testResults)
 			if (auto pvalue = test.id in results)
 				if (auto pindex = commit in commitLookup)
 					testResultArray[*pindex] = *pvalue;
@@ -203,7 +207,7 @@ ToDo getToDo()
 				result.stats.numCachedCommits++;
 		result.stats.lastCommitTime = commits[$-1].time.toString();
 
-		foreach (commit, results; testResults)
+		foreach (commit, results; state.testResults)
 			result.stats.numResults += results.length;
 	}
 
@@ -212,15 +216,15 @@ ToDo getToDo()
 
 /// Build (or pull from cache) a commit for testing
 /// Return true if successful
-bool prepareCommit(LogEntry commit)
+bool prepareCommit(ref State state, LogEntry commit)
 {
-	if (commit.hash in badCommits)
+	if (commit.hash in state.badCommits)
 	{
 		debug log("Commit known to be bad - skipping");
 		return false;
 	}
 
-	bool wantTests = tests.any!(test => test.id !in testResults.get(commit.hash, null));
+	bool wantTests = tests.any!(test => test.id !in state.testResults.get(commit.hash, null));
 	if (!wantTests)
 	{
 		debug log("No new tests to sample - skipping");
@@ -242,14 +246,14 @@ bool prepareCommit(LogEntry commit)
 
 	if (error)
 	{
-		badCommits[commit.hash] = true;
+		state.badCommits[commit.hash] = true;
 		return false;
 	}
 
 	return true;
 }
 
-void runTests(LogEntry commit)
+void runTests(ref State state, LogEntry commit)
 {
 	log("Preparing list of tests to run...");
 	Test[] testsToRun;
@@ -278,7 +282,7 @@ void runTests(LogEntry commit)
 			log("Test failed with error: " ~ e.toString());
 		}
 		query("INSERT INTO [Results] ([TestID], [Commit], [Value], [Error]) VALUES (?, ?, ?, ?)").exec(test.id, commit.hash, result, error);
-		testResults[commit.hash][test.id] = result;
+		state.testResults[commit.hash][test.id] = result;
 	}
 	log("Saving test results...");
 	query("COMMIT TRANSACTION").exec();
