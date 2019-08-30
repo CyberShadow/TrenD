@@ -163,6 +163,22 @@ INSERT INTO [Commits] ([Commit], [Message], [Time], [Error])
 	FROM [Commits_OLD];
 DROP TABLE [Commits_OLD];
 SQL",
+		// Remove the [Message] and [Time] columns,
+		// get them directly from git instead
+		q"SQL
+ALTER TABLE [Commits] RENAME TO [Commits_OLD];
+CREATE TABLE [Commits] (
+	[Commit] CHAR(40) NOT NULL,
+	[Error] TEXT NULL
+);
+DROP INDEX [CommitIndex];
+CREATE UNIQUE INDEX [CommitIndex] ON [Commits] (
+	[Commit] ASC
+);
+INSERT INTO [Commits] ([Commit], [Error])
+	SELECT [Commit], [Error] FROM [Commits_OLD];
+DROP TABLE [Commits_OLD];
+SQL",
 	]);
 }
 

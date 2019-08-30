@@ -49,7 +49,7 @@ mainLoop:
 	{
 		state.update();
 		auto todo = state.getToDo();
-		atomic!saveJson(jsonPath, todo.stats);
+		state.atomic!saveJson(jsonPath, todo.stats);
 
 		auto start = Clock.currTime;
 
@@ -70,7 +70,7 @@ mainLoop:
 	}
 }
 
-void saveJson(string target, Stats stats)
+void saveJson(in ref State state, string target, Stats stats)
 {
 	log("Saving results...");
 
@@ -103,8 +103,8 @@ void saveJson(string target, Stats stats)
 	}
 	JsonData data;
 
-	foreach (string commit, string message, long time; query("SELECT [Commit], [Message], [Time] FROM [Commits]").iterate())
-		data.commits ~= JsonData.Commit(commit, message, time);
+	foreach (ref commit; state.commits)
+		data.commits ~= JsonData.Commit(commit.hash, commit.message.join("\n"), commit.time.toUnixTime);
 	foreach (string testID, string commit, long value, string error; query("SELECT [TestID], [Commit], [Value], [Error] FROM [Results]").iterate())
 		data.results ~= JsonData.Result(testID, commit, value, error);
 	foreach (test; tests)

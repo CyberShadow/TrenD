@@ -25,6 +25,8 @@ import ae.utils.time.format;
 import common;
 import test;
 
+alias LogEntry = DManager.LogEntry;
+
 struct State
 {
 	bool[string] badCommits; /// In-memory cache of un-buildable commits
@@ -33,6 +35,8 @@ struct State
 	/// Result of getSubmoduleHistory of the meta-repository.
 	/// history[commitHash][submoduleName] == submoduleCommitHash
 	string[string][string] history;
+
+	LogEntry[] commits;
 }
 
 /// Load data from database on disk at startup
@@ -47,7 +51,7 @@ State loadState()
 	foreach (string commit, string testID, long value; query("SELECT [Commit], [TestID], [Value] FROM [Results]").iterate())
 		state.testResults[commit][testID] = value;
 
-	state.history = d.getMetaRepo().getSubmoduleHistory(["origin/master"]);
+	state.loadHistory();
 
 	return state;
 }
@@ -72,10 +76,15 @@ void update(ref State state)
 		}
 	}
 
-	state.history = d.getMetaRepo().getSubmoduleHistory(["origin/master"]);
+	state.loadHistory();
 }
 
-alias LogEntry = DManager.LogEntry;
+private void loadHistory(ref State state)
+{
+	state.history = d.getMetaRepo().getSubmoduleHistory(["origin/master"]);
+	state.commits = d.getLog();
+	state.commits.reverse(); // oldest first
+}
 
 struct ToDoEntry
 {
@@ -125,8 +134,7 @@ ToDo getToDo(/*in*/ ref State state)
 	log("Finding things to do...");
 
 	log("Getting log...");
-	auto commits = d.getLog();
-	commits.reverse(); // oldest first
+	auto commits = state.commits;
 
 	log("Getting cache state...");
 	auto cacheState = d.getCacheState(state.history);
@@ -268,8 +276,8 @@ bool prepareCommit(ref State state, LogEntry commit)
 		log("Error: " ~ e.toString());
 	}
 
-	query("INSERT OR REPLACE INTO [Commits] ([Commit], [Message], [Time], [Error]) VALUES (?, ?, ?, ?)")
-		.exec(commit.hash, commit.message.join("\n"), commit.time.toUnixTime, error);
+	query("INSERT OR REPLACE INTO [Commits] ([Commit], [Error]) VALUES (?, ?)")
+		.exec(commit.hash, error);
 
 	if (error)
 	{
