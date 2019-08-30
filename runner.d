@@ -207,7 +207,7 @@ ToDo getToDo(/*in*/ ref State state)
 					assert(lastValue != long.min);
 					auto v0 = min(value, lastValue);
 					auto v1 = max(value, lastValue);
-					auto points = cast(int)(scoreFactors.diffMax * (v1-v0) / v1);
+					auto points = v1 ? cast(int)(scoreFactors.diffMax * (v1-v0) / v1) : 0;
 					if (!test.exact)
 						points /= scoreFactors.diffInexact;
 					diffPoints[bestIntermediaryIndex] += points;
