@@ -47,6 +47,8 @@ State loadState()
 	foreach (string commit, string testID, long value; query("SELECT [Commit], [TestID], [Value] FROM [Results]").iterate())
 		state.testResults[commit][testID] = value;
 
+	state.history = d.getMetaRepo().getSubmoduleHistory(["origin/master"]);
+
 	return state;
 }
 
