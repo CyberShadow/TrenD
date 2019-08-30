@@ -988,7 +988,6 @@ Plot.prototype._buildSeries = function(start, stop) {
       data[axis].push([ time, null ]);
     });
   }
-  pushNull(start);
 
   function pushdp(series, buildinf, ctime, haveNull, haveNonNull) {
     // Push a datapoint (one or more commits) onto builds/data
@@ -1044,17 +1043,34 @@ Plot.prototype._buildSeries = function(start, stop) {
     return median;
   }
 
+  // Render one commit out-of-bound of zoom level,
+  // so that there is a visible line going off-screen.
+  var startIndex = -1;
+  var stopIndex = gData.commits.length;
+  for (var commitIndex = 0; commitIndex < gData.commits.length; commitIndex++) {
+    var commit = gData.commits[commitIndex];
+
+    if (start !== undefined && commit.time >= start && startIndex < 0) {
+      startIndex = Math.max(0, commitIndex - 1);
+    }
+    if (stop !== undefined && commit.time > stop) {
+      stopIndex = commitIndex + 1;
+      break;
+    }
+  }
+  startIndex = Math.max(0, startIndex);
+
   var buildinf;
   var series = {};
   var ctime = -1;
   var haveNull;
   var haveNonNull;
 
-  for (var commitIndex in gData.commits) {
-    var commit = gData.commits[commitIndex];
+  for (commitIndex = 0; commitIndex < gData.commits.length; commitIndex++) {
+    commit = gData.commits[commitIndex];
 
-    if (start !== undefined && commit.time < start) continue;
-    if (stop !== undefined && commit.time > stop) break;
+    if (commitIndex < startIndex) continue;
+    if (commitIndex >= stopIndex) break;
 
     var time;
     if (gQueryVars['evenspacing']) {
@@ -1112,8 +1128,6 @@ Plot.prototype._buildSeries = function(start, stop) {
 
   // Push a dummy null point at the end of the series to force the zoom to end
   // exactly there
-  pushNull(start);
-  pushNull(stop);
   var seriesData = [];
   for (var testID in data) {
     if (data[testID].length != builds.length) alert('data/buildinfo length mismatch');
