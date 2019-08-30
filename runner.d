@@ -186,7 +186,7 @@ ToDo getToDo(/*in*/ ref State state)
 		size_t lastIndex = 0;
 		long lastValue = long.min;
 		size_t bestIntermediaryIndex = 0;
-		int bestIntermediaryScore = 0;
+		int bestIntermediaryScore = int.min;
 
 		foreach (i, value; testResultArray)
 		{
@@ -216,7 +216,7 @@ ToDo getToDo(/*in*/ ref State state)
 				lastIndex = i;
 				lastValue = value;
 				bestIntermediaryIndex = 0;
-				bestIntermediaryScore = 0;
+				bestIntermediaryScore = int.min;
 			}
 		}
 	}
