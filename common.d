@@ -82,7 +82,10 @@ class TrenDManager : DManager
 }
 
 // Late initialization to let tests array populate
-alias d = singleton!TrenDManager;
+version (dsymbol)
+	TrenDManager d;
+else
+	alias d = singleton!TrenDManager;
 
 // ***************************************************************************
 
