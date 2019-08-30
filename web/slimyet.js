@@ -921,6 +921,8 @@ Plot.prototype.setZoomRange = function(range, nosync) {
 
   this.zoomRange = range;
   var newseries = this._buildSeries(range[0], range[1]);
+  this.flot.getAxes().xaxis.options.min = range[0];
+  this.flot.getAxes().xaxis.options.max = range[1];
   this.flot.setData(newseries);
   this.flot.setupGrid();
   this.flot.draw();
