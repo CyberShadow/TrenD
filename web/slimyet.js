@@ -635,7 +635,9 @@ var gDateAxisThresholds = [
 //{ threshold :  10*24*60*60, init : function(d) { d.setDate(d.getDate()-d.getDay()); }, next : function(d) { d.setDate(d.getDate()+7); }},
   { threshold :   1*24*60*60, init : function(d) { d.setHours       (0); }, next : function(d) { d.setDate    (d.getDate    ()+1); }},
   { threshold :      1*60*60, init : function(d) { d.setMinutes     (0); }, next : function(d) { d.setHours   (d.getHours   ()+1); }},
+  { threshold :        10*60, init : function(d) { d.setMinutes     (0); }, next : function(d) { d.setMinutes (d.getMinutes ()+10); }},
   { threshold :         1*60, init : function(d) { d.setSeconds     (0); }, next : function(d) { d.setMinutes (d.getMinutes ()+1); }},
+  { threshold :           10, init : function(d) { d.setSeconds     (0); }, next : function(d) { d.setSeconds (d.getSeconds ()+10); }},
   { threshold :            1, init : function(d) { d.setMilliseconds(0); }, next : function(d) { d.setSeconds (d.getSeconds ()+1); }},
 ];
 
