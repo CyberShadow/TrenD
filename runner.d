@@ -95,21 +95,21 @@ struct ToDoEntry
 struct ScoreFactors
 {
 	/// Prefer commits in base 2:
-	int base2       =  100; /// points per trailing zero
+	int base2       =   100; /// points per trailing zero
 
 	/// Prefer commits which are already built and cached:
-	int cached      =  500; /// points if cached
+	int cached      =   500; /// points if cached
 
 	/// Prefer recent commits:
-	int recentMax   = 1000; /// max points (for newest commit)
-	int recentExp   =   50; /// curve exponent
+	int recentMax   =  1000; /// max points (for newest commit)
+	int recentExp   =    50; /// curve exponent
 
 	/// Prefer untested commits:
-	int untested    =  100; /// total budget, awarded in full if never tested
+	int untested    =   100; /// total budget, awarded in full if never tested
 
 	/// Prefer commits between big differences in test results:
-	int diffMax     = 5000; /// max points (for 100% difference)
-	int diffInexact =  100; /// penalty divisor for inexact tests
+	int diffMax     = 20000; /// max points (for 100% difference)
+	int diffInexact =   500; /// penalty divisor for inexact tests
 }
 ScoreFactors scoreFactors;
 
