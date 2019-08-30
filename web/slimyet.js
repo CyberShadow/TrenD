@@ -630,10 +630,12 @@ function getPerBuildData(buildname, success, fail) {
 }
 
 var gDateAxisThresholds = [
-  { threshold : 720*24*60*60, init : function(d) { d.setMonth       (0); }, next : function(d) { d.setFullYear(d.getFullYear()+1); }},
-  { threshold :  30*24*60*60, init : function(d) { d.setDate        (1); }, next : function(d) { d.setMonth   (d.getMonth   ()+1); }},
-//{ threshold :  10*24*60*60, init : function(d) { d.setDate(d.getDate()-d.getDay()); }, next : function(d) { d.setDate(d.getDate()+7); }},
-  { threshold :   1*24*60*60, init : function(d) { d.setHours       (0); }, next : function(d) { d.setDate    (d.getDate    ()+1); }},
+  { threshold :1080*24*60*60, init : function(d) { d.setMonth       (0); }, next : function(d) { d.setFullYear(d.getFullYear()+1); }},
+  { threshold : 720*24*60*60, init : function(d) { d.setMonth       (0); }, next : function(d) { d.setMonth   (d.getMonth   ()+6); }},
+  { threshold :  60*24*60*60, init : function(d) { d.setDate        (1); }, next : function(d) { d.setMonth   (d.getMonth   ()+1); }},
+  { threshold :  15*24*60*60, init : function(d) { d.setDate        (1); }, next : function(d) { d.setDate    (d.getDate    ()+12); d.setDate(((d.getDate()-1)/10|0)*10); }},
+  { threshold :   2*24*60*60, init : function(d) { d.setHours       (0); }, next : function(d) { d.setDate    (d.getDate    ()+1); }},
+  { threshold :     24*60*60, init : function(d) { d.setHours       (0); }, next : function(d) { d.setHours   (d.getHours   ()+12); }},
   { threshold :      1*60*60, init : function(d) { d.setMinutes     (0); }, next : function(d) { d.setHours   (d.getHours   ()+1); }},
   { threshold :        10*60, init : function(d) { d.setMinutes     (0); }, next : function(d) { d.setMinutes (d.getMinutes ()+10); }},
   { threshold :         1*60, init : function(d) { d.setSeconds     (0); }, next : function(d) { d.setMinutes (d.getMinutes ()+1); }},
@@ -791,7 +793,7 @@ function Plot(appendto) {
           var range = axis.max - axis.min;
           var date = new Date(val * 1000);
 
-          if (range > 24*60*60) {
+          if (range > 2*24*60*60) {
             var abbrevMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul',
                                 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
