@@ -19,7 +19,7 @@ class FilesizeTest : Test
 	string fileName, component;
 
 	override @property string id() { return "size-" ~ fileName.baseName().stripExtension(); }
-	override @property string name() { return "Size of %s".format(fileName.baseName()); }
+	override @property string name() { return "File size - %s".format(fileName.baseName()); }
 	override @property string description() { return "The size of the built file %s.".format(fileName); }
 	override @property Unit unit() { return Unit.bytes; }
 	override @property bool exact() { return true; }
@@ -35,7 +35,7 @@ class FilesizeTest : Test
 class SrcSizeTest : Test
 {
 	override @property string id() { return "srcsize"; }
-	override @property string name() { return "Size of Phobos/Druntime source code"; }
+	override @property string name() { return "File size - Phobos/Druntime source code"; }
 	override @property string description() { return "The size of the Phobos/Druntime source code / includes."; }
 	override @property Unit unit() { return Unit.bytes; }
 	override @property bool exact() { return true; }
