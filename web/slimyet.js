@@ -698,7 +698,6 @@ function Plot(appendto) {
       hooks: { draw : [
         function(plot, ctx) {
           var data = plot.getData();
-          var axes = plot.getAxes();
           var offset = plot.getPlotOffset();
           for (var i = 0; i < data.length; i++) {
             var series = data[i];
@@ -709,8 +708,8 @@ function Plot(appendto) {
               var color = gDarkColorsFirst[i];
               var d = series.data[j];
               if (d[1] === null) continue;
-              var x = offset.left + axes.xaxis.p2c(d[0]);
-              var y = offset.top + axes.yaxis.p2c(d[1]);
+              var x = offset.left + series.xaxis.p2c(d[0]);
+              var y = offset.top + series.yaxis.p2c(d[1]);
               var r = 4;
               ctx.lineWidth = 2;
               ctx.beginPath();
