@@ -921,6 +921,8 @@ Plot.prototype.setZoomRange = function(range, nosync) {
   // The highlight has the wrong range now that we mucked with the graph
   if (this.highlighted)
     this.showHighlight(this._highlightLoc, this._highlightWidth);
+
+  saveHash();
 };
 
 function getCurrentTestIDs() {
@@ -1393,7 +1395,12 @@ $(function () {
 
       $('#graphs h3').remove();
       gPlot = new Plot($('#graphs'));
-      selectTest(gCurrentTestID);
+
+      $(window).on('hashchange', function(e) {
+        if (!suppressHashChange)
+          applyHash();
+      });
+      applyHash();
 
       // Show stats
       var stats =
@@ -1426,6 +1433,7 @@ $(function () {
       gPinnedTestIDs[gCurrentTestID] = true;
     else
       delete gPinnedTestIDs[gCurrentTestID];
+    saveHash();
   });
 
   var adjectives = ['slim', 'fast', 'lean'];
@@ -1476,7 +1484,7 @@ function createTestSelectors(targetPath) {
       // and we've built the dropdowns to it,
       // so we're done.
       if (testPath.length == path.length) {
-        renderTest(testID);
+        _renderTest(testID);
         return;
       }
 
@@ -1516,11 +1524,45 @@ function createTestSelectors(targetPath) {
   }
 }
 
-function renderTest(testID) {
+function _renderTest(testID) {
   gCurrentTestID = testID;
   gPlot.updateData();
+  saveHash();
   $('#pin').prop('checked', testID in gPinnedTestIDs);
   $('#test-id').text(testID);
   $('#test-name').text(gTests[testID].name.replace(/ - /g, ' – '));
   $('#test-description').html(gTests[testID].description);
+}
+
+function getCurrentHash() {
+  return '#' + [gCurrentTestID, Object.keys(gPinnedTestIDs).join(','), gPlot.zoomRange[0], gPlot.zoomRange[1]].join(';');
+}
+var suppressHashChange = false;
+function saveHash() {
+  if (gPlot && !suppressHashChange) {
+    suppressHashChange = true;
+    window.location.hash = getCurrentHash();
+    suppressHashChange = false;
+  }
+}
+
+function applyHash() {
+  var hash = window.location.hash;
+  if (hash == getCurrentHash())
+    return;
+  hash = hash.substr(1).split(';');
+  suppressHashChange = true;
+  if (hash.length == 1 && hash[0] == '') {
+    selectTest(gCurrentTestID);
+    gPlot.setZoomRange();
+  } else if (hash.length == 4) {
+    gPinnedTestIDs = {};
+    hash[1].split(',').forEach(function(testID) {
+      if (testID.length)
+        gPinnedTestIDs[testID] = true;
+    });
+    selectTest(hash[0]);
+    gPlot.setZoomRange([hash[2], hash[3]]);
+  }
+  suppressHashChange = false;
 }
