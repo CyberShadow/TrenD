@@ -459,6 +459,27 @@ class ProgramMemoryUsageTest : ValgrindTest
 	}
 }
 
+class ProgramInstructionCountTest : ValgrindTest
+{
+	mixin GenerateConstructorProxies;
+
+	override @property string[] commandPrefix() { return ["valgrind", "--tool=callgrind"]; }
+	override @property string logFileSwitch() { return "--callgrind-out-file="; }
+
+	override @property string statID() { return "callgrind-insns"; }
+	override @property string statName() { return "instructions executed"; }
+	override @property Unit unit() { return Unit.instructions; }
+	override @property bool exact() { return true; }
+
+	override long parseLogFile()
+	{
+		foreach (line; File(valgrindLogFile).byLine)
+			if (line.skipOver("summary: "))
+				return line.strip().to!long;
+		throw new Exception("Can't find result in log file");
+	}
+}
+
 class ProgramCompilePhaseTest(StatTest) : StatTest
 {
 	mixin GenerateConstructorProxies;
@@ -492,7 +513,7 @@ static this()
 	{
 		auto program = new Program(info);
 		foreach (PhaseTest; TypeTuple!(ProgramCompilePhaseTest, ProgramLinkPhaseTest, ProgramExecutionPhaseTest))
-			foreach (StatTest; TypeTuple!(ProgramRealTimeTest, ProgramUserTimeTest, ProgramKernelTimeTest, ProgramMemoryUsageTest))
+			foreach (StatTest; TypeTuple!(ProgramRealTimeTest, ProgramUserTimeTest, ProgramKernelTimeTest, ProgramInstructionCountTest, ProgramMemoryUsageTest))
 				tests ~= new PhaseTest!StatTest(program);
 		tests ~= new ObjectSizeTest(program);
 		tests ~= new BinarySizeTest(program);

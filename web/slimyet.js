@@ -299,9 +299,25 @@ function formatTime(raw, ref) {
   }
 }
 
+// As above, but with an unspecified amount of things. (e.g. instructions)
+function formatAmount(raw, ref) {
+  if (ref === undefined) ref=raw;
+  if (ref / 1000 < 2) {
+    return prettyFloat(raw);
+  } else if (ref / Math.pow(1000, 2) < 2) {
+    return prettyFloat(raw / 1000) + "K";
+  } else {
+    return prettyFloat(raw / Math.pow(1000, 2)) + "M";
+  }
+}
+
 function formatUnit(raw, unit, ref) {
   if (!unit) unit = gTests[gCurrentTestID].unit;
-  return unit=='bytes' ? formatBytes(raw, ref) : formatTime(raw, ref);
+  if (unit=='bytes')
+    return formatBytes(raw, ref);
+  if (unit=='nanoseconds')
+    return formatTime(raw, ref);
+  return formatAmount(raw, ref);
 }
 
 // Pass to progress on $.ajax to show the progress div for this request
