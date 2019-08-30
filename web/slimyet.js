@@ -891,36 +891,36 @@ function Plot(appendto) {
 // it returns (so we'll zoom in, but then re-render moments later with more
 // points)
 Plot.prototype.setZoomRange = function(range, nosync) {
-    var zoomOut = false;
-    if (range === undefined)
-      range = this.dataRange;
-    if (range[0] == this.dataRange[0] && range[1] == this.dataRange[1])
-      zoomOut = true;
+  var zoomOut = false;
+  if (range === undefined)
+    range = this.dataRange;
+  if (range[0] == this.dataRange[0] && range[1] == this.dataRange[1])
+    zoomOut = true;
 
-    var self = this;
-    if (this.zoomed && zoomOut) {
-      // Zooming back out, remove zoom out button
-      this.zoomed = false;
-      self.zoomOutButton.hide();
-    } else if (!this.zoomed && !zoomOut) {
-      // Zoomed out -> zoomed in. Add zoom out button.
-      this.zoomed = true;
-      self.zoomOutButton.show();
-    }
+  var self = this;
+  if (this.zoomed && zoomOut) {
+    // Zooming back out, remove zoom out button
+    this.zoomed = false;
+    self.zoomOutButton.hide();
+  } else if (!this.zoomed && !zoomOut) {
+    // Zoomed out -> zoomed in. Add zoom out button.
+    this.zoomed = true;
+    self.zoomOutButton.show();
+  }
 
-    // If there are sub-series we should pull in that we haven't cached,
-    // set requests for them and reprocess the zoom when complete
+  // If there are sub-series we should pull in that we haven't cached,
+  // set requests for them and reprocess the zoom when complete
 
-    this.zoomRange = range;
-    var newseries = this._buildSeries(range[0], range[1]);
-    this.flot.setData(newseries);
-    this.flot.setupGrid();
-    this.flot.draw();
-    this._drawAnnotations();
+  this.zoomRange = range;
+  var newseries = this._buildSeries(range[0], range[1]);
+  this.flot.setData(newseries);
+  this.flot.setupGrid();
+  this.flot.draw();
+  this._drawAnnotations();
 
-    // The highlight has the wrong range now that we mucked with the graph
-    if (this.highlighted)
-      this.showHighlight(this._highlightLoc, this._highlightWidth);
+  // The highlight has the wrong range now that we mucked with the graph
+  if (this.highlighted)
+    this.showHighlight(this._highlightLoc, this._highlightWidth);
 };
 
 function getCurrentTestIDs() {
