@@ -150,6 +150,10 @@ CREATE TABLE [Commits] (
 	[Time] INTEGER NOT NULL,
 	[Error] TEXT NULL
 );
+DROP INDEX [CommitIndex];
+CREATE UNIQUE INDEX [CommitIndex] ON [Commits] (
+	[Commit] ASC
+);
 INSERT INTO [Commits] ([Commit], [Message], [Time], [Error])
 	SELECT [Commit], [Message], [Time],
 		CASE [Error]
