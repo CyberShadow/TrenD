@@ -1005,7 +1005,6 @@ Plot.prototype._buildSeries = function(start, stop) {
   var buildinf;
   var series = {};
   var ctime = -1;
-  var count = 0;
   var haveNull;
   var haveNonNull;
 
@@ -1026,7 +1025,6 @@ Plot.prototype._buildSeries = function(start, stop) {
 
       if (time != ctime) {
         pushdp(series, buildinf, ctime, haveNull, haveNonNull);
-        count = 0;
         ctime = time;
         series = {};
         buildinf = { time: time };
@@ -1040,7 +1038,6 @@ Plot.prototype._buildSeries = function(start, stop) {
       var rev = commit.commit;
       var starttime = commit.time;
       var endtime = commit.time;
-      count++;
       if (!buildinf['firstrev']) {
         buildinf['firstrev'] = rev;
         buildinf['timerange'] = [ starttime, endtime ];
