@@ -940,38 +940,37 @@ Plot.prototype._buildSeries = function(start, stop) {
   // Grouping distance
   var groupdist = gMaxPoints == 0 ? 0 : Math.round((stop - start) / gMaxPoints);
 
-  // Points might be [min, median, max], or just a number if it only
-  // represents one datapoint.
-  function pval(point, ind) {
-    var ret = (point instanceof Array) ? point[ind] : point;
-    return (ret === null) ? ret : +ret;
+  function pushNull(time) {
+    builds.push({ time: time, timerange: [ time, time ] });
+    testIDs.forEach(function(axis) {
+      data[axis].push([ time, null ]);
+    });
   }
 
-  function pushdp(series, buildinf, ctime) {
-    // Push a datapoint onto builds/data
+  function pushdp(series, buildinf, ctime, haveNull, haveNonNull) {
+    // Push a datapoint (one or more commits) onto builds/data
     if (ctime != -1) {
       // Flatten the axis first and determine if this is a null build
       var flat = {};
-      var nullbuild = true;
-      for (var axis in series) {
+      for (var axis in series)
         flat[axis] = flatten(series[axis]);
-        if (flat[axis] !== null)
-          nullbuild = false;
+
+      if (haveNull) {
+        // Add null DP to break the line.
+        pushNull(buildinf['timerange'][0]);
       }
-      if (nullbuild) {
-        // Null builds in the series cause the line to be disjointed. Only push
-        // one if there is >= 24h of consecutive untested builds.
-        var diff = builds.length ? buildinf['timerange'][0] -
-                                   builds[builds.length - 1]['timerange'][1]
-                                 : 0;
-        //if (diff < gDisjointTime)
-        //  return;
+      if (haveNonNull) {
+        // Add to series
+        builds.push(buildinf);
+        testIDs.forEach(function(axis) {
+          data[axis].push([ +buildinf['time'], flat[axis] ]);
+        });
+
+        if (haveNull) {
+          // Add null DP to break the line.
+          pushNull(buildinf['timerange'][1]);
+        }
       }
-      // Add to series
-      builds.push(buildinf);
-      testIDs.forEach(function(axis) {
-        data[axis].push([ +buildinf['time'], flat[axis] ]);
-      });
     }
   }
   function groupin(timestamp) {
@@ -1006,35 +1005,32 @@ Plot.prototype._buildSeries = function(start, stop) {
   var series = {};
   var ctime = -1;
   var count = 0;
+  var haveNull;
+  var haveNonNull;
 
   for (var commitIndex in gData.commits) {
     var commit = gData.commits[commitIndex];
     for (var testIndex in testIDs) {
       var testID = testIDs[testIndex];
 
-      var value = null;
-      if (testID in commit.results) {
-        var result = commit.results[testID];
-        if (result.error === null)
-          value = result.value;
-      }
-
       if (start !== undefined && commit.time < start) continue;
       if (stop !== undefined && commit.time > stop) break;
 
       var time;
       if (gQueryVars['evenspacing']) {
-        time = start + ind * (stop - start) / gData.commits.length;
+        time = start + commitIndex * (stop - start) / gData.commits.length;
       } else {
         time = groupin(commit.time);
       }
 
       if (time != ctime) {
-        pushdp(series, buildinf, ctime);
+        pushdp(series, buildinf, ctime, haveNull, haveNonNull);
         count = 0;
         ctime = time;
         series = {};
         buildinf = { time: time };
+        haveNull = false;
+        haveNonNull = false;
       }
 
       // Full series uses non-merged syntax, which is just build['revision']
@@ -1051,16 +1047,26 @@ Plot.prototype._buildSeries = function(start, stop) {
         buildinf['lastrev'] = rev;
         buildinf['timerange'][1] = endtime;
       }
-      //for (var axis in this.axis) {
-      var axis = testID; {
+      testIDs.forEach(function(axis) {
+        var value = null;
+        if (axis in commit.results) {
+          var result = commit.results[axis];
+          if (result.error === null)
+            value = result.value;
+        }
+
         if (!series[axis]) series[axis] = [];
         // Push all non-null datapoints onto list, pushdp() flattens
         // this list, finding its midpoint/min/max.
         series[axis].push(value);
-      }
+        if (value === null)
+          haveNull = true;
+        else
+          haveNonNull = true;
+      });
     }
   }
-  pushdp(series, buildinf, ctime);
+  pushdp(series, buildinf, ctime, haveNull, haveNonNull);
 
   // Push a dummy null point at the end of the series to force the zoom to end
   // exactly there
