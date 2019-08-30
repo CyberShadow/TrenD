@@ -177,20 +177,20 @@ ToDo getToDo(/*in*/ ref State state)
 
 	foreach (test; tests)
 	{
-		testResultArray[] = 0;
+		testResultArray[] = long.min;
 		foreach (commit, results; state.testResults)
 			if (auto pvalue = test.id in results)
 				if (auto pindex = commit in commitLookup)
 					testResultArray[*pindex] = *pvalue;
 
 		size_t lastIndex = 0;
-		long lastValue = 0;
+		long lastValue = long.min;
 		size_t bestIntermediaryIndex = 0;
 		int bestIntermediaryScore = 0;
 
 		foreach (i, value; testResultArray)
 		{
-			if (value == 0)
+			if (value == long.min)
 			{
 				diffPoints[i] += scoreFactors.untested;
 
@@ -204,7 +204,7 @@ ToDo getToDo(/*in*/ ref State state)
 			{
 				if (lastIndex && bestIntermediaryIndex)
 				{
-					assert(lastValue);
+					assert(lastValue != long.min);
 					auto v0 = min(value, lastValue);
 					auto v1 = max(value, lastValue);
 					auto points = cast(int)(scoreFactors.diffMax * (v1-v0) / v1);
