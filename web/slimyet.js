@@ -675,7 +675,8 @@ function Plot(appendto) {
   this.legendContainer = $.new('div').addClass('legendContainer').appendTo(this.rhsContainer);
 
   this.obj = $.new('div').addClass('graph').appendTo(this.container);
-  this.flot = $.plot(this.obj,
+  this.flot = $.plot(
+    this.obj,
     // Data
     this._buildSeries(this.zoomRange[0], this.zoomRange[1]),
     // Options
@@ -686,24 +687,24 @@ function Plot(appendto) {
           var axes = plot.getAxes();
           var offset = plot.getPlotOffset();
           for (var i = 0; i < data.length; i++) {
-              var series = data[i];
-              for (var j = 0; j < series.data.length; j++) {
-                  var buildinf = series.buildinfo[j];
-                  if ('lastrev' in buildinf)
-                      continue;
-                  var color = gDarkColorsFirst[0];
-                  var d = series.data[j];
-                  if (d[1] === null) continue;
-                  var x = offset.left + axes.xaxis.p2c(d[0]);
-                  var y = offset.top + axes.yaxis.p2c(d[1]);
-                  var r = 4;
-                  ctx.lineWidth = 2;
-                  ctx.beginPath();
-                  ctx.arc(x,y,r,0,Math.PI*2,true);
-                  ctx.closePath();
-                  ctx.fillStyle = color;
-                  ctx.fill();
-              }
+            var series = data[i];
+            for (var j = 0; j < series.data.length; j++) {
+              var buildinf = series.buildinfo[j];
+              if ('lastrev' in buildinf)
+                continue;
+              var color = gDarkColorsFirst[0];
+              var d = series.data[j];
+              if (d[1] === null) continue;
+              var x = offset.left + axes.xaxis.p2c(d[0]);
+              var y = offset.top + axes.yaxis.p2c(d[1]);
+              var r = 4;
+              ctx.lineWidth = 2;
+              ctx.beginPath();
+              ctx.arc(x,y,r,0,Math.PI*2,true);
+              ctx.closePath();
+              ctx.fillStyle = color;
+              ctx.fill();
+            }
           }
         }
       ]},
@@ -785,9 +786,9 @@ function Plot(appendto) {
           }
 
           return '<div class="tick-day-month">' + date.getUTCDate() + ' ' +
-                 abbrevMonths[date.getUTCMonth()] + '</div>' +
-                 '<div class="tick-year">' + date.getUTCFullYear() + '</div>' +
-                 releaseName;
+            abbrevMonths[date.getUTCMonth()] + '</div>' +
+            '<div class="tick-year">' + date.getUTCFullYear() + '</div>' +
+            releaseName;
         }
       },
       yaxis: {
