@@ -764,7 +764,7 @@ function Plot(appendto) {
           points.push(roundDayUp(axis.min));
           points.push(roundDayDown(axis.max));
           */
-          var d = new Date(roundDayDown(axis.min)*1000);
+          var d = new Date(axis.min*1000);
           for (var ind in gDateAxisThresholds) {
             var t = gDateAxisThresholds[ind];
             if (range > t.threshold) {
@@ -772,7 +772,7 @@ function Plot(appendto) {
                 if (ind2 >= ind)
                   gDateAxisThresholds[ind2].init(d);
               while (d.getTime()/1000 < axis.max) {
-                var u = roundDayDown(d.getTime()/1000);
+                var u = d.getTime()/1000;
                 if (u > axis.min) {
                   points.push(u);
                 }
@@ -786,19 +786,27 @@ function Plot(appendto) {
         },
 
         tickFormatter: function(val, axis) {
-          var abbrevMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul',
-                              'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+          var range = axis.max - axis.min;
           var date = new Date(val * 1000);
 
-          var releaseName = "";
-          if (gReleaseLookup[val]) {
-            releaseName = '<div class="tick-release-name">' + gReleaseLookup[val] + '</div>';
-          }
+          if (range > 24*60*60) {
+            var abbrevMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul',
+                                'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-          return '<div class="tick-day-month">' + date.getUTCDate() + ' ' +
-            abbrevMonths[date.getUTCMonth()] + '</div>' +
-            '<div class="tick-year">' + date.getUTCFullYear() + '</div>' +
-            releaseName;
+            var releaseName = "";
+            if (gReleaseLookup[val]) {
+              releaseName = '<div class="tick-release-name">' + gReleaseLookup[val] + '</div>';
+            }
+
+            return '<div class="tick-day-month">' + date.getUTCDate() + ' ' +
+              abbrevMonths[date.getUTCMonth()] + '</div>' +
+              '<div class="tick-year">' + date.getUTCFullYear() + '</div>' +
+              releaseName;
+          } else if (range > 60*60) {
+            return ('0'+date.getUTCHours()).slice(-2) + ':' + ('0'+date.getUTCMinutes()).slice(-2);
+          } else {
+            return ('0'+date.getUTCHours()).slice(-2) + ':' + ('0'+date.getUTCMinutes()).slice(-2) + ':' + ('0'+date.getUTCSeconds()).slice(-2);
+          }
         }
       },
       yaxes: jQuery.map(axisUnits, function(unit, unitIndex) {
