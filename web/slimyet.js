@@ -307,8 +307,10 @@ function formatAmount(raw, ref) {
     return prettyFloat(raw);
   } else if (ref / Math.pow(1000, 2) < 2) {
     return prettyFloat(raw / 1000) + "K";
-  } else {
+  } else if (ref / Math.pow(1000, 3) < 2) {
     return prettyFloat(raw / Math.pow(1000, 2)) + "M";
+  } else {
+    return prettyFloat(raw / Math.pow(1000, 3)) + "B";
   }
 }
 
