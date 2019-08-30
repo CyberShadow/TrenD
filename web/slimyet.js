@@ -1295,7 +1295,6 @@ Plot.prototype.onHover = function(item, pos) {
   this.hoveredItem = item;
 };
 
-
 $(function () {
   var url = 'data/data.json';
   $.ajax({
@@ -1346,11 +1345,6 @@ $(function () {
       for (ind = 0; ind < gData.tests.length; ind++) {
         var test = gData.tests[ind];
         gTests[test.id] = test;
-
-        var $option = $.new('option', {'value' : test.id}).text(test.name);
-        if (test.id == gCurrentTestID)
-          $option.attr('selected', 'selected');
-        $('#testSelector').append($option);
       }
 
       for (ind = 0; ind < gData.results.length; ind++) {
@@ -1389,10 +1383,6 @@ $(function () {
       });
   });
 
-  $('#testSelector').on('change keyup', function() {
-    selectTest(this.value);
-  });
-
   var adjectives = ['slim', 'fast', 'lean'];
   var adjectiveIndex = 0;
   var rotating = false;
@@ -1410,6 +1400,78 @@ $(function () {
 });
 
 function selectTest(testID) {
+  if (testID in gTests)
+    createTestSelectors(gTests[testID].name.split(' - '));
+  else
+    alert('Unknown test: ' + testID);
+}
+
+function createTestSelectors(targetPath) {
+  var $testSelectors = $('#test-selectors');
+  $testSelectors.empty();
+
+  var path = [];
+
+  while (true) {
+    var children = [];
+    var haveChild = {};
+    var selectionIndex = 0;
+    var i;
+
+    testLoop:
+    for (var testID in gTests) {
+      var testPath = gTests[testID].name.split(" - ");
+
+      // Is this test on our path?
+      for (i = 0; i < path.length; i++)
+        if (i >= testPath.length || testPath[i] != path[i])
+          continue testLoop;
+
+      // There is a test with this exact name,
+      // and we've built the dropdowns to it,
+      // so we're done.
+      if (testPath.length == path.length) {
+        renderTest(testID);
+        return;
+      }
+
+      var child = testPath[path.length];
+      if (!(child in haveChild)) {
+        if (path.length < targetPath.length && targetPath[path.length] == child)
+          selectionIndex = children.length;
+        haveChild[child] = true;
+        children.push(child);
+      }
+    }
+
+    var $testSelector = $.new('select');
+    for (i = 0; i < children.length; i++) {
+      var $option = $.new('option', {'value' : children[i]}).text(children[i]);
+      if (i == selectionIndex)
+        $option.attr('selected', 'selected');
+      $testSelector.append($option);
+    }
+    (function() {
+      var idx = path.length;
+      $testSelector.on('change keyup', function() {
+        var newPath = [];
+        $testSelectors.find('select').each(function(i, e) {
+          newPath.push($(e).val());
+        });
+        createTestSelectors(newPath);
+        var selectors = $testSelectors.find('select');
+        // Restore focus
+        if (idx < selectors.length)
+          selectors[idx].focus();
+      });
+    }());
+    $testSelectors.append($testSelector);
+
+    path.push(children[selectionIndex]);
+  }
+}
+
+function renderTest(testID) {
   gCurrentTestID = testID;
   gPlot.updateData();
   $('#test-id').text(testID);
