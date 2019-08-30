@@ -515,7 +515,7 @@ Tooltip.prototype.showBuild = function(label, series, buildset, buildindex, seri
     ttinner.append($.new('p').addClass('commit-message').text(gCommits[rev].message));
   } else {
     // Multiple revisions, add range link
-    ttinner.append($.new('b').text('commit range'));
+    ttinner.append($.new('b').text(build['numrevs'] + ' commits'));
     ttinner.append(":");
     ttinner.append($.new('p')
                    .append(mkGitLink(rev))
@@ -1037,9 +1037,11 @@ Plot.prototype._buildSeries = function(start, stop) {
       if (!buildinf['firstrev']) {
         buildinf['firstrev'] = rev;
         buildinf['timerange'] = [ starttime, endtime ];
+        buildinf['numrevs'] = 1;
       } else {
         buildinf['lastrev'] = rev;
         buildinf['timerange'][1] = endtime;
+        buildinf['numrevs']++;
       }
       testIDs.forEach(function(axis) {
         var value = null;
