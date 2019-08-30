@@ -1421,8 +1421,7 @@ $(function () {
     }, 1000, function() { rotating = false });
     adjectiveIndex = (adjectiveIndex+1)%3;
   }
-  //setInterval(rotateAdjective, 2000);
-  $('#page-header').mouseenter(rotateAdjective);
+  $('#page-header').click(rotateAdjective);
 });
 
 function selectTest(testID) {
