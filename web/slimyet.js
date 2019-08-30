@@ -1382,9 +1382,9 @@ $(function () {
       // about. For instance, the mobile series all start Dec 2012, so all
       // builds prior to that are not useful in mobile mode.
       gDataRange = [ null, null ];
-      var ind;
-      for (ind = 0; ind < gData.commits.length; ind++) {
-        var t = gData.commits[ind].time;
+      var commitIdx, testIdx, resultIdx;
+      for (commitIdx = 0; commitIdx < gData.commits.length; commitIdx++) {
+        var t = gData.commits[commitIdx].time;
         if (gDataRange[0] === null || t < gDataRange[0])
           gDataRange[0] = t;
         if (gDataRange[1] === null || t > gDataRange[1])
@@ -1401,25 +1401,25 @@ $(function () {
       logMsg("Useful data range is [ " + gDataRange + " ]");
 
       gCommits = {};
-      for (ind = 0; ind < gData.commits.length; ind++) {
-        var commit = gData.commits[ind];
+      for (commitIdx = 0; commitIdx < gData.commits.length; commitIdx++) {
+        var commit = gData.commits[commitIdx];
         gCommits[commit.commit] = commit;
         commit.results = {};
-        if (ind > 0) {
-          var prevCommit = gData.commits[ind-1];
+        if (commitIdx > 0) {
+          var prevCommit = gData.commits[commitIdx-1];
           prevCommit.next = commit;
           commit.prev = prevCommit;
         }
       }
 
       gTests = {};
-      for (ind = 0; ind < gData.tests.length; ind++) {
-        var test = gData.tests[ind];
+      for (testIdx = 0; testIdx < gData.tests.length; testIdx++) {
+        var test = gData.tests[testIdx];
         gTests[test.id] = test;
       }
 
-      for (ind = 0; ind < gData.results.length; ind++) {
-        var result = gData.results[ind];
+      for (resultIdx = 0; resultIdx < gData.results.length; resultIdx++) {
+        var result = gData.results[resultIdx];
         if (result.commit in gCommits)
           gCommits[result.commit].results[result.testID] = result;
       }
