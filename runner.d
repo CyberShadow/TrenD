@@ -14,7 +14,8 @@ module runner;
 import core.thread;
 
 import std.algorithm;
-import std.conv;
+import std.datetime.stopwatch;
+import std.format;
 import std.range;
 import std.stdio;
 import std.typecons;
@@ -306,15 +307,16 @@ void runTests(ref State state, LogEntry commit)
 	{
 		log("Running test: " ~ test.id);
 		long result = 0; string error = null;
+		auto sw = StopWatch(AutoStart.yes);
 		try
 		{
 			result = test.sample();
-			log("Test succeeded with value: " ~ text(result));
+			log("Test succeeded in %s with value: %s".format(sw.peek(), result));
 		}
 		catch (Exception e)
 		{
 			error = e.msg;
-			log("Test failed with error: " ~ e.toString());
+			log("Test failed in %s with error: %s".format(sw.peek(), e.toString()));
 		}
 		query("INSERT INTO [Results] ([TestID], [Commit], [Value], [Error]) VALUES (?, ?, ?, ?)").exec(test.id, commit.hash, result, error);
 		state.testResults[commit.hash][test.id] = result;
