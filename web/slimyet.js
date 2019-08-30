@@ -939,11 +939,15 @@ Plot.prototype.updateData = function() {
   var self = this;
   // Put visible axes on either sides
   var index = 0;
+  var configuredUnit = {};
   jQuery.each(getCurrentTestIDs(), function(i, testID) {
     var unit = gTests[testID].unit;
-    var axisIndex = self.unitAxes[unit];
-    var axis = self.flot.getAxes()['y' + (axisIndex ? 1 + axisIndex : '') + 'axis'];
-    axis.options.position = ['left', 'right'][index++ % 2];
+    if (!(unit in configuredUnit)) {
+      configuredUnit[unit] = true;
+      var axisIndex = self.unitAxes[unit];
+      var axis = self.flot.getAxes()['y' + (axisIndex ? 1 + axisIndex : '') + 'axis'];
+      axis.options.position = ['left', 'right'][index++ % 2];
+    }
   });
 
   var range = this.zoomRange;
