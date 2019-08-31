@@ -1082,20 +1082,39 @@ Plot.prototype._buildSeries = function(start, stop) {
     }
 
     // Push a datapoint (one or more commits) onto builds/data
-    function pushDataPoint(pointData, pointMetadata, ctime, haveNull) {
+    function pushDataPoint(pointData, pointMetadata, ctime, allValues) {
       if (!pointData)
         return;
 
       if (pointData.length) {
-        if (haveNull)
-          pushNull(pointMetadata.timerange[0]);
+        // Push leading null point if there is a null before non-null
+        var i;
+        var sawNull = false;
+        for (i = 0; i < allValues.length; i++) {
+          if (allValues[i] === null)
+            sawNull = true;
+          else
+            if (sawNull) {
+              pushNull(pointMetadata.timerange[0]);
+              break;
+            }
+        }
 
         pointData = [ ctime, flatten(pointData) ];
         testData.push(pointData);
         testMetadata.push(pointMetadata);
 
-        if (haveNull)
-          pushNull(pointMetadata.timerange[1]);
+        // Push trailing null point if there is a null after a non-null
+        var sawNonNull = false;
+        for (i = 0; i < allValues.length; i++) {
+          if (allValues[i] !== null)
+            sawNonNull = true;
+          else
+            if (sawNonNull) {
+              pushNull(pointMetadata.timerange[1]);
+              break;
+            }
+        }
       } else {
         pushNull(ctime);
       }
@@ -1133,7 +1152,7 @@ Plot.prototype._buildSeries = function(start, stop) {
     var pointData = null;
     var pointMetadata = null;
     var ctime = -1;
-    var haveNull;
+    var allValues = [];
 
     for (var commitIndex = 0; commitIndex < gData.commits.length; commitIndex++) {
       var commit = gData.commits[commitIndex];
@@ -1150,11 +1169,11 @@ Plot.prototype._buildSeries = function(start, stop) {
 
       var testIndex;
       if (time != ctime) {
-        pushDataPoint(pointData, pointMetadata, ctime, haveNull);
+        pushDataPoint(pointData, pointMetadata, ctime, allValues);
         ctime = time;
         pointData = [];
         pointMetadata = {};
-        haveNull = false;
+        allValues = [];
       }
 
       var value = null;
@@ -1175,11 +1194,10 @@ Plot.prototype._buildSeries = function(start, stop) {
           pointMetadata['timerange'][1] = commit.time;
           pointMetadata['numrevs']++;
         }
-      } else {
-        haveNull = true;
       }
+      allValues.push(value);
     }
-    pushDataPoint(pointData, pointMetadata, ctime, haveNull);
+    pushDataPoint(pointData, pointMetadata, ctime, allValues);
 
     if (testData.length != testMetadata.length)
       alert('data/buildinfo length mismatch');
