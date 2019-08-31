@@ -251,14 +251,22 @@ ToDo getToDo(/*in*/ ref State state)
 	foreach (i, points; diffPoints)
 		scores[i] += points / cast(int)tests.length;
 
-	{
-		auto f = File("work/todolist.txt", "wb");
-		foreach (i, commit; commits)
-			f.writefln("%s %s %5d %s", commit.hash, commit.time.formatTime!`Y-m-d H:i:s`, scores[i], scoreReasons[i]);
-	}
-
 	auto index = new size_t[commits.length];
 	scores.makeIndex!"a>b"(index);
+
+	{
+		auto f = File("work/todolist.txt", "wb");
+
+		f.writeln("---------------------------------------------- Top items:");
+		foreach (i; index[0 .. min(100, $)])
+			f.writefln("%s %s %5d %s", commits[i].hash, commits[i].time.formatTime!`Y-m-d H:i:s`, scores[i], scoreReasons[i]);
+
+		f.writeln();
+		f.writeln("---------------------------------------------- Chronological list:");
+		foreach (i, commit; commits)
+			f.writefln("%s %s %5d %s", commit.hash, commit.time.formatTime!`Y-m-d H:i:s`, scores[i], scoreReasons[i]);
+
+	}
 
 	result.entries = index.map!(i => ToDoEntry(commits[i], scores[i])).array();
 
