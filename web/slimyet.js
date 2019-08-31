@@ -27,24 +27,6 @@ var gQueryVars = (function () {
   return ret;
 })();
 
-/*
- * Annotations to draw on the graph. Format:
- */
-
-var gAnnotations = (function() {
-  var annotations = [
-    //{date : new Date('December 17, 2015 01:02:03'), msg : 'Message here' }
-  ];
-
-  // Sort by date
-  annotations.sort(function(a, b) {
-    a = a['date'].getTime();
-    b = b['date'].getTime();
-    return (a < b) ? -1 : (a == b) ? 0 : 1;
-  });
-  return annotations;
-})();
-
 // Width in pixels of highlight (zoom) selector
 var gHighlightWidth = gQueryVars['zoomwidth'] ? +gQueryVars['zoomwidth'] : 400;
 
@@ -54,9 +36,6 @@ var gTooltipOffset = 'tooltipoffset' in gQueryVars ? +gQueryVars['tooltipoffset'
 // Coalesce datapoints to keep them under this many per zoom level.
 // Default to 150, or 0 (disabled) if nocondense is supplied
 var gMaxPoints = gQueryVars['maxpoints'] ? +gQueryVars['maxpoints'] : (gQueryVars['nocondense'] ? 0 : 150);
-
-// Merge tooltips if their position is within this many pixels
-var gAnnoMergeDist = 'annotationmerge' in gQueryVars ? +gQueryVars['annotationmerge'] : 50;
 
 // 10-class paired qualitative color scheme from http://colorbrewer2.org/.
 // Ordered so that the important memory lines are given more prominent colors.
@@ -762,15 +741,6 @@ function Plot(appendto) {
   // Graph Tooltip
   //
 
-  // Setup annotations container
-  var offset = this.flot.getPlotOffset();
-  this.annotations = $.new('div').addClass('annotations')
-                      .css('width', this.flot.width() + 'px')
-                      .css('left', offset.left + 'px')
-                      .css('top', offset.top + 'px');
-  this.obj.prepend(this.annotations);
-  this._drawAnnotations();
-
   this.tooltip = new Tooltip(this.container);
   this.obj.bind("plotclick", function(event, pos, item) { self.onClick(item); });
   this.obj.bind("plothover", function(event, pos, item) { self.onHover(item, pos); });
@@ -815,7 +785,6 @@ Plot.prototype.setZoomRange = function(range, nosync) {
   this.flot.setData(newseries);
   this.flot.setupGrid();
   this.flot.draw();
-  this._drawAnnotations();
 
   // The highlight has the wrong range now that we mucked with the graph
   if (this.highlighted)
@@ -854,7 +823,6 @@ Plot.prototype.updateData = function() {
   this.flot.setData(newseries);
   this.flot.setupGrid();
   this.flot.draw();
-  this._drawAnnotations();
 };
 
 // Takes two timestamps and builds a list of series based on this plot's axis
@@ -1033,85 +1001,6 @@ Plot.prototype.onClick = function(item) {
   } else if (this.highlighted) {
     // Clicked on highlighted zoom space, do a graph zoom
     this.setZoomRange(this.highlightRange);
-  }
-};
-
-Plot.prototype._drawAnnotations = function() {
-  var self = this;
-  this.annotations.empty();
-
-  function includeAnno(anno) {
-    return true;
-  }
-
-  function dateStamp(msg, time) {
-    return '<div class="grey">' + prettyDate(time / 1000) + '</div>' + msg;
-  }
-
-  // Determine the pixels:time ratio for this zoom level
-  var xaxis = this.flot.getAxes().xaxis;
-  var secondsPerPixel = xaxis.c2p(1) - xaxis.c2p(0);
-  var mergeTime = gAnnoMergeDist * secondsPerPixel * 1000;
-  var mergedAnnotations = [];
-  for (var i = 0; i < gAnnotations.length; i++) {
-    if (!includeAnno(gAnnotations[i]))
-      continue;
-    var starttime = gAnnotations[i]['date'].getTime();
-    var timesum = starttime;
-    var msg = dateStamp(gAnnotations[i]['msg'], starttime);
-    var elements = 1;
-    while (i + 1 < gAnnotations.length &&
-           gAnnotations[i + 1]['date'].getTime() - starttime < mergeTime) {
-      i++;
-      var merge = gAnnotations[i];
-      if (!includeAnno(merge))
-        continue;
-      elements++;
-      var mergetime = merge['date'].getTime();
-      timesum += mergetime;
-      msg += "<hr>" + dateStamp(merge['msg'], mergetime);
-    }
-    mergedAnnotations.push({ 'date': new Date(timesum / elements),
-                             'msg': msg });
-  }
-  for (var i = 0; i < mergedAnnotations.length; i++) {
-    (function () {
-      var anno = mergedAnnotations[i];
-
-      var date = anno['date'];
-
-      var div = $.new('div').addClass('annotation').text('?');
-      self.annotations.append(div);
-      var tooltiptop = parseInt(div.css('padding-top')) * 2 + 5
-                     + parseInt(div.css('height'))
-                     + parseInt(self.annotations.css('top'))
-                     + self.flot.getPlotOffset().top
-                     + self.obj.offset().top - self.container.offset().top;
-      var divwidth = parseInt(div.css('padding-left'))
-                   + parseInt(div.css('width'));
-      var left = xaxis.p2c(date.getTime() / 1000) - divwidth / 2;
-
-      if (left + divwidth + 5 > self.flot.width() ||
-          left - 5 < 0) {
-        div.remove();
-        return;
-      }
-
-      div.css('left', left);
-
-      div.mouseover(function() {
-        self.tooltip.empty();
-        self.tooltip.append(anno['msg']);
-        var x = left
-              - parseInt(self.tooltip.obj.css('width')) / 2
-              - parseInt(self.tooltip.obj.css('padding-left'))
-              - gTooltipOffset
-              + divwidth / 2
-              + self.flot.getPlotOffset().left;
-        self.tooltip.hover(x, tooltiptop);
-      });
-      div.mouseout(function() { self.tooltip.unHover(); });
-    })();
   }
 };
 
