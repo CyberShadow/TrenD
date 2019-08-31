@@ -503,7 +503,7 @@ body.faqPage {
 }
 
 #test-info {
-  margin: 0 auto;
+  margin: 0 auto 2em auto;
   width: 35em;
 }
 
