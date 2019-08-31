@@ -508,7 +508,7 @@ Tooltip.prototype.showBuild = function(label, series, buildset, buildindex, seri
   var ttinner = $.new('p');
   if (getCurrentTestIDs().length > 1)
     ttinner.append($.new('span').css('color', gDarkColorsFirst[seriesindex]).text(gTests[seriesname].name), ': ');
-  var valobj = $.new('p').text(formatUnit(value, unit) + ' ');
+  var valobj = $.new('p').text(formatUnit(value, unit) + ' ').attr('title', value + ' ' + unit);
   // Delta
   if (buildindex > 0 && series[buildindex - 1][1] !== null) {
     valobj.append(mkDelta(value, series[buildindex - 1][1], unit));
