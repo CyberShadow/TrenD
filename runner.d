@@ -108,13 +108,13 @@ static immutable:
 	int recentMax   =  1000; /// max points (for newest commit)
 	int recentExp   =    50; /// curve exponent
 
-	/// Prefer untested commits:
-	int untested    =   100; /// total budget, awarded in full if never tested
-
 	/// Prefer commits between big differences in test results:
-	int diffMax     = 20000; /// max points (for 100% difference)
-	int diffInexact =   500; /// penalty divisor for inexact tests
+	int diffMax     =  1000; /// max points (for 100% difference)
+	int diffInexact =   100; /// penalty divisor for inexact tests
 	int diffError   = diffMax / 2; /// points for zeroing in on an error
+
+	/// Prefer untested commits:
+	int untested    =     1;
 }
 ScoreFactors scoreFactors;
 
@@ -152,20 +152,23 @@ ToDo getToDo(/*in*/ ref State state)
 	void award(size_t commit, int points, string reason)
 	{
 		scores[commit] += points;
-		scoreReasons[commit][reason] += points;
+		if (points)
+			scoreReasons[commit][reason] += points;
 	}
 
 	foreach (i; 0..commits.length)
 	{
 		if (i)
 		{
-			int score = 0;
+			int bits = 0;
 			foreach (b; 0..30)
 				if ((i & (1<<b)) == 0)
-					score += scoreFactors.base2;
+					bits++;
 				else
 					break;
-			award(i, score, "base2");
+			if (i + 1 == commits.length) // Boost most recent commit
+				bits = bits * bits;
+			award(i, bits * scoreFactors.base2, "base2");
 		}
 
 		if (cacheState[commits[i].hash])
@@ -176,14 +179,6 @@ ToDo getToDo(/*in*/ ref State state)
 
 	size_t[string] commitLookup = commits.map!(logEntry => logEntry.hash).enumerate.map!(t => tuple(t[1], t[0])).assocArray;
 	auto testResultArray = new long[commits.length];
-
-	auto diffPoints = new int[commits.length];
-	void awardDiffPoints(size_t commit, int points, string reason)
-	{
-		diffPoints[commit] += points;
-		if (points > tests.length)
-			scoreReasons[commit][reason] += real(points) / tests.length;
-	}
 
 	foreach (test; tests)
 	{
@@ -215,7 +210,7 @@ ToDo getToDo(/*in*/ ref State state)
 		{
 			if (value == long.min)
 			{
-				awardDiffPoints(i, scoreFactors.untested, "untested");
+				award(i, scoreFactors.untested, "untested");
 
 				if (bestIntermediaryScore < scores[i])
 				{
@@ -230,14 +225,14 @@ ToDo getToDo(/*in*/ ref State state)
 					assert(lastValue != long.min);
 					int points;
 					if (value == -1 || lastValue == -1) // one was an error
-						awardDiffPoints(bestIntermediaryIndex, scoreFactors.diffError, "error " ~ test.id);
+						award(bestIntermediaryIndex, scoreFactors.diffError, "error " ~ test.id);
 					else
 					{
 						auto diff = abs(value - lastValue);
 						points = valueRange ? cast(int)(scoreFactors.diffMax * diff / valueRange) : 0;
 						if (!test.exact)
 							points /= scoreFactors.diffInexact;
-						awardDiffPoints(bestIntermediaryIndex, points, "diff " ~ test.id);
+						award(bestIntermediaryIndex, points, "diff " ~ test.id);
 					}
 				}
 
@@ -248,8 +243,6 @@ ToDo getToDo(/*in*/ ref State state)
 			}
 		}
 	}
-	foreach (i, points; diffPoints)
-		scores[i] += points / cast(int)tests.length;
 
 	auto index = new size_t[commits.length];
 	scores.makeIndex!"a>b"(index);
