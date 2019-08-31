@@ -1096,7 +1096,7 @@ Plot.prototype._buildSeries = function(start, stop) {
   function groupin(timestamp) {
     return groupdist > 0 ? timestamp - (timestamp % groupdist) : timestamp;
   }
-  // Given a list of numbers, return [min, median, max]
+  // Given a list of numbers, return median
   function flatten(series) {
     var iseries = [];
     for (var x in series) {
@@ -1125,8 +1125,9 @@ Plot.prototype._buildSeries = function(start, stop) {
   // so that there is a visible line going off-screen.
   var startIndex = -1;
   var stopIndex = gData.commits.length;
+  var commit;
   for (var commitIndex = 0; commitIndex < gData.commits.length; commitIndex++) {
-    var commit = gData.commits[commitIndex];
+    commit = gData.commits[commitIndex];
 
     if (start !== undefined && commit.time >= start && startIndex < 0) {
       startIndex = Math.max(0, commitIndex - 1);
@@ -1166,36 +1167,31 @@ Plot.prototype._buildSeries = function(start, stop) {
       haveNonNull = false;
     }
 
-    // Full series uses non-merged syntax, which is just build['revision']
-    // but we might be using overview data and hence merged syntax
-    // (firstrev, lastrev)
     var rev = commit.commit;
-    var starttime = commit.time;
-    var endtime = commit.time;
     if (!buildinf['firstrev']) {
       buildinf['firstrev'] = rev;
-      buildinf['timerange'] = [ starttime, endtime ];
+      buildinf['timerange'] = [ commit.time, commit.time ];
       buildinf['numrevs'] = 1;
     } else {
       buildinf['lastrev'] = rev;
-      buildinf['timerange'][1] = endtime;
+      buildinf['timerange'][1] = commit.time;
       buildinf['numrevs']++;
     }
 
     for (var testIndex in testIDs) {
-      var axis = testIDs[testIndex];
+      var testID = testIDs[testIndex];
 
       var value = null;
-      if (axis in commit.results) {
-        var result = commit.results[axis];
+      if (testID in commit.results) {
+        var result = commit.results[testID];
         if (result.error === null)
           value = result.value;
       }
 
-      if (!series[axis]) series[axis] = [];
+      if (!series[testID]) series[testID] = [];
       // Push all non-null datapoints onto list, pushdp() flattens
       // this list, finding its midpoint/min/max.
-      series[axis].push(value);
+      series[testID].push(value);
       if (value === null)
         haveNull = true;
       else
@@ -1204,8 +1200,6 @@ Plot.prototype._buildSeries = function(start, stop) {
   }
   pushdp(series, buildinf, ctime, haveNull, haveNonNull);
 
-  // Push a dummy null point at the end of the series to force the zoom to end
-  // exactly there
   var seriesData = [];
   for (var testID in data) {
     if (data[testID].length != builds.length) alert('data/buildinfo length mismatch');
