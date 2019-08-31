@@ -163,7 +163,8 @@ var gCommits = {};
 var gTests = {};
 
 // Current test
-var gCurrentTestID = 'program-hello-binarysize';
+var gDefaultTestID = 'program-hello-binarysize';
+var gCurrentTestID = gDefaultTestID;
 var gPinnedTestIDs = {};
 
 // Our plot
@@ -751,14 +752,11 @@ function Plot(appendto) {
   if (appendto) this.container.appendTo(appendto);
   //$.new('h2').text(name).appendTo(this.container);
   this.rhsContainer = $.new('div').addClass('rhsContainer').appendTo(this.container);
-  this.zoomOutButton = $.new('a', { href: '#', class: 'zoomOutButton' })
-                        .appendTo($('#zoomOutButtonContainer'))
-                        .text('Zoom Out')
-                        .hide()
-                        .click(function () {
-                          self.setZoomRange();
-                          return false;
-                        });
+  this.zoomOutButton = $('#zoom-out-button')
+    .click(function () {
+      self.setZoomRange();
+      return false;
+    });
   this.legendContainer = $.new('div').addClass('legendContainer').appendTo(this.rhsContainer);
 
   this.obj = $.new('div').addClass('graph').appendTo(this.container);
@@ -1519,6 +1517,10 @@ $(function () {
     saveHash();
   });
 
+  $('#reset-button').click(function() {
+    window.location.hash = '';
+  });
+
   var adjectives = ['slim', 'fast', 'lean'];
   var adjectiveIndex = 0;
   var rotating = false;
@@ -1636,7 +1638,8 @@ function applyHash() {
   hash = hash.substr(1).split(';');
   suppressHashChange = true;
   if (hash.length == 1 && hash[0] == '') {
-    selectTest(gCurrentTestID);
+    gPinnedTestIDs = {};
+    selectTest(gDefaultTestID);
     gPlot.setZoomRange();
   } else if (hash.length == 4) {
     gPinnedTestIDs = {};

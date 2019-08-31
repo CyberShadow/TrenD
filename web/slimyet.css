@@ -159,7 +159,8 @@ a:visited:hover { color: #494; }
   font-weight: bold;
 }
 
-.zoomSelector, #controls a,
+.zoomSelector,
+#controls a,
 #controls a:link,
 #controls a:visited,
 #controls a:active,
@@ -175,13 +176,6 @@ a:visited:hover { color: #494; }
   opacity: 0; /* Start hidden */
   background-color: rgba(220,220,220,0.5);
   text-align: center;
-}
-
-.zoomOutButton {
-}
-
-.zoomOutButton:hover {
-  text-decoration: underline;
 }
 
 .buildList {
@@ -498,6 +492,14 @@ body.faqPage {
 
 #controls-right > * {
   margin-left: 2em;
+}
+
+#controls-right > a:hover {
+  text-decoration: underline;
+}
+
+#zoom-out-button {
+  display: none;
 }
 
 #test-info {
