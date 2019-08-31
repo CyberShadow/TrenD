@@ -535,6 +535,45 @@ Tooltip.prototype.showBuild = function(label, series, buildset, buildindex, seri
                    .append(prettyDate(build['timerange'][1]))
                    .append(")"));
   }
+
+  // Clearly announce gaps in data
+  {
+    // Find the tested commit in this commit group
+    var rev1 = build['lastrev'] ? build['lastrev'] : rev;
+    var testedCommit = null;
+    for (var c = gCommits[rev]; c.prev.commit != rev1; c = c.next)
+      if (seriesname in c.results) {
+        testedCommit = c;
+        break;
+      }
+
+    // Backtrack to the previous tested commit
+    var numSkipped = 0;
+    if (testedCommit) {
+      c = testedCommit.prev;
+      while (c && !(seriesname in c.results)) {
+        c = c.prev;
+        numSkipped++;
+      }
+    }
+
+    if (numSkipped > 0)
+      ttinner.append(
+        $.new('hr')
+          .css('border-top', '1px solid #888'),
+        $.new('p')
+          .text(numSkipped +
+                ' untested commit' + (numSkipped > 1 ? 's' : '') +
+                ' since ' +
+                (c === null
+                 ? 'the beginning'
+                 : (c.commit.slice(0,12) +
+                    ' (' + prettyDate(c.time) + ')' +
+                    (c.results[seriesname].error !== null ? ', which errored,' : '')
+                   )) +
+                ' not shown'));
+  }
+
   this.append(ttinner);
 };
 
@@ -1403,6 +1442,7 @@ $(function () {
       gCommits = {};
       for (commitIdx = 0; commitIdx < gData.commits.length; commitIdx++) {
         var commit = gData.commits[commitIdx];
+        commit.next = commit.prev = null;
         gCommits[commit.commit] = commit;
         commit.results = {};
         if (commitIdx > 0) {
