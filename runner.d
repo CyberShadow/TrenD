@@ -15,7 +15,9 @@ import core.thread;
 
 import std.algorithm;
 import std.datetime.stopwatch;
+import std.exception;
 import std.format;
+import std.math;
 import std.range;
 import std.stdio;
 import std.typecons;
@@ -31,7 +33,7 @@ alias LogEntry = DManager.LogEntry;
 struct State
 {
 	bool[string] badCommits; /// In-memory cache of un-buildable commits
-	long[string][string] testResults; // testResults[commit.hash][test.id] = value
+	long[string][string] testResults; // testResults[commit.hash][test.id] = value (-1 on error)
 
 	/// Result of getSubmoduleHistory of the meta-repository.
 	/// history[commitHash][submoduleName] == submoduleCommitHash
@@ -49,8 +51,8 @@ State loadState()
 	foreach (string commit; query("SELECT [Commit] FROM [Commits] WHERE [Error] IS NOT NULL").iterate())
 		state.badCommits[commit] = true;
 
-	foreach (string commit, string testID, long value; query("SELECT [Commit], [TestID], [Value] FROM [Results]").iterate())
-		state.testResults[commit][testID] = value;
+	foreach (string commit, string testID, long value, string error; query("SELECT [Commit], [TestID], [Value], [Error] FROM [Results]").iterate())
+		state.testResults[commit][testID] = error !is null ? -1 : value;
 
 	state.loadHistory();
 
@@ -95,6 +97,7 @@ struct ToDoEntry
 
 struct ScoreFactors
 {
+static immutable:
 	/// Prefer commits in base 2:
 	int base2       =   100; /// points per trailing zero
 
@@ -111,6 +114,7 @@ struct ScoreFactors
 	/// Prefer commits between big differences in test results:
 	int diffMax     = 20000; /// max points (for 100% difference)
 	int diffInexact =   500; /// penalty divisor for inexact tests
+	int diffError   = diffMax / 2; /// points for zeroing in on an error
 }
 ScoreFactors scoreFactors;
 
@@ -184,10 +188,23 @@ ToDo getToDo(/*in*/ ref State state)
 	foreach (test; tests)
 	{
 		testResultArray[] = long.min;
-		foreach (commit, results; state.testResults)
-			if (auto pvalue = test.id in results)
-				if (auto pindex = commit in commitLookup)
-					testResultArray[*pindex] = *pvalue;
+		long valueRange;
+		{
+			long minValue = long.max;
+			long maxValue = long.min;
+			foreach (commit, results; state.testResults)
+				if (auto pvalue = test.id in results)
+					if (auto pindex = commit in commitLookup)
+					{
+						testResultArray[*pindex] = *pvalue;
+						if (*pvalue >= 0)
+						{
+							minValue = min(minValue, *pvalue);
+							maxValue = max(maxValue, *pvalue);
+						}
+					}
+			valueRange = max(0, maxValue - minValue);
+		}
 
 		size_t lastIndex = 0;
 		long lastValue = long.min;
@@ -208,15 +225,20 @@ ToDo getToDo(/*in*/ ref State state)
 			}
 			else
 			{
-				if (lastIndex && bestIntermediaryIndex)
+				if (lastIndex && bestIntermediaryIndex && lastValue != value)
 				{
 					assert(lastValue != long.min);
-					auto v0 = min(value, lastValue);
-					auto v1 = max(value, lastValue);
-					auto points = v1 ? cast(int)(scoreFactors.diffMax * (v1-v0) / v1) : 0;
-					if (!test.exact)
-						points /= scoreFactors.diffInexact;
-					awardDiffPoints(i, points, "diff " ~ test.id);
+					int points;
+					if (value == -1 || lastValue == -1) // one was an error
+						awardDiffPoints(i, scoreFactors.diffError, "error " ~ test.id);
+					else
+					{
+						auto diff = abs(value - lastValue);
+						points = valueRange ? cast(int)(scoreFactors.diffMax * diff / valueRange) : 0;
+						if (!test.exact)
+							points /= scoreFactors.diffInexact;
+						awardDiffPoints(i, points, "diff " ~ test.id);
+					}
 				}
 
 				lastIndex = i;
@@ -310,11 +332,12 @@ void runTests(ref State state, LogEntry commit)
 	foreach (test; testsToRun)
 	{
 		log("Running test: " ~ test.id);
-		long result = 0; string error = null;
+		long result = -1; string error = null;
 		auto sw = StopWatch(AutoStart.yes);
 		try
 		{
 			result = test.sample();
+			enforce(result >= 0, "Value %s is negative".format(result));
 			log("Test succeeded in %s with value: %s".format(sw.peek(), result));
 		}
 		catch (Exception e)
