@@ -775,12 +775,12 @@ function Plot(appendto) {
           for (var i = 0; i < data.length; i++) {
             var series = data[i];
             for (var j = 0; j < series.data.length; j++) {
+              var d = series.data[j];
+              if (d[1] === null) continue;
               var buildinf = series.buildinfo[j];
               if ('lastrev' in buildinf)
                 continue;
               var color = gDarkColorsFirst[i];
-              var d = series.data[j];
-              if (d[1] === null) continue;
               var x = offset.left + series.xaxis.p2c(d[0]);
               var y = offset.top + series.yaxis.p2c(d[1]);
               var r = 4;
@@ -1047,86 +1047,17 @@ Plot.prototype.updateData = function() {
 // Takes two timestamps and builds a list of series based on this plot's axis
 // suitable for passing to flot - condensed to try to hit gMaxPoints.
 Plot.prototype._buildSeries = function(start, stop) {
-  var self = this; // for closures
-
-  var builds = [];
-  var data = {};
-
-  var testIDs = getCurrentTestIDs();
-  testIDs.forEach(function(axis) {
-    data[axis] = [];
-  });
+  var self = this;
 
   // Grouping distance
-  var groupdist = gMaxPoints == 0 ? 0 : Math.round((stop - start) / gMaxPoints);
-
-  function pushNull(time) {
-    builds.push({ time: time, timerange: [ time, time ] });
-    testIDs.forEach(function(axis) {
-      data[axis].push([ time, null ]);
-    });
-  }
-
-  function pushdp(series, buildinf, ctime, haveNull, haveNonNull) {
-    // Push a datapoint (one or more commits) onto builds/data
-    if (ctime != -1) {
-      // Flatten the axis first and determine if this is a null build
-      var flat = {};
-      for (var axis in series)
-        flat[axis] = flatten(series[axis]);
-
-      if (haveNull) {
-        // Add null DP to break the line.
-        pushNull(buildinf['timerange'][0]);
-      }
-      if (haveNonNull) {
-        // Add to series
-        builds.push(buildinf);
-        testIDs.forEach(function(axis) {
-          data[axis].push([ +buildinf['time'], flat[axis] ]);
-        });
-
-        if (haveNull) {
-          // Add null DP to break the line.
-          pushNull(buildinf['timerange'][1]);
-        }
-      }
-    }
-  }
-  function groupin(timestamp) {
-    return groupdist > 0 ? timestamp - (timestamp % groupdist) : timestamp;
-  }
-  // Given a list of numbers, return median
-  function flatten(series) {
-    var iseries = [];
-    for (var x in series) {
-      if (series[x] !== null) {
-        if (series[x] instanceof Array) {
-          // [ median, count ] pair, push it N times for weighting (this is not
-          // the most efficient way to do this)
-          for (var i = 0; i < series[x][1]; i++)
-            iseries.push(+series[x][0]);
-        } else {
-          iseries.push(+series[x]);
-        }
-      }
-    }
-    if (!iseries.length) return null;
-    iseries.sort();
-    var median;
-    if (iseries.length % 2)
-      median = iseries[(iseries.length - 1)/ 2];
-    else
-      median = iseries[iseries.length / 2];
-    return median;
-  }
+  var groupDistance = gMaxPoints == 0 ? 0 : Math.round((stop - start) / gMaxPoints);
 
   // Render one commit out-of-bound of zoom level,
   // so that there is a visible line going off-screen.
   var startIndex = -1;
   var stopIndex = gData.commits.length;
-  var commit;
-  for (var commitIndex = 0; commitIndex < gData.commits.length; commitIndex++) {
+  var commit, commitIndex;
+  for (commitIndex = 0; commitIndex < gData.commits.length; commitIndex++) {
     commit = gData.commits[commitIndex];
 
     if (start !== undefined && commit.time >= start && startIndex < 0) {
@@ -1139,47 +1070,94 @@ Plot.prototype._buildSeries = function(start, stop) {
   }
   startIndex = Math.max(0, startIndex);
 
-  var buildinf;
-  var series = {};
-  var ctime = -1;
-  var haveNull;
-  var haveNonNull;
+  var seriesData = [];
 
-  for (commitIndex = 0; commitIndex < gData.commits.length; commitIndex++) {
-    commit = gData.commits[commitIndex];
+  getCurrentTestIDs().forEach(function(testID) {
+    var testData = [];
+    var testMetadata = [];
 
-    if (commitIndex < startIndex) continue;
-    if (commitIndex >= stopIndex) break;
-
-    var time;
-    if (gQueryVars['evenspacing']) {
-      time = start + commitIndex * (stop - start) / gData.commits.length;
-    } else {
-      time = groupin(commit.time);
+    // Null data points indicate gaps in the data,
+    // and break the line in the Flot chart.
+    function pushNull(time) {
+      testData.push([ time, null ]);
+      testMetadata.push(null);
     }
 
-    if (time != ctime) {
-      pushdp(series, buildinf, ctime, haveNull, haveNonNull);
-      ctime = time;
-      series = {};
-      buildinf = { time: time };
-      haveNull = false;
-      haveNonNull = false;
+    // Push a datapoint (one or more commits) onto builds/data
+    function pushDataPoint(pointData, pointMetadata, ctime, haveNull) {
+      if (!pointData)
+        return;
+
+      if (pointData.length) {
+        if (haveNull)
+          pushNull(pointMetadata.timerange[0]);
+
+        pointData = [ ctime, flatten(pointData) ];
+        testData.push(pointData);
+        testMetadata.push(pointMetadata);
+
+        if (haveNull)
+          pushNull(pointMetadata.timerange[1]);
+      } else {
+        pushNull(ctime);
+      }
     }
 
-    var rev = commit.commit;
-    if (!buildinf['firstrev']) {
-      buildinf['firstrev'] = rev;
-      buildinf['timerange'] = [ commit.time, commit.time ];
-      buildinf['numrevs'] = 1;
-    } else {
-      buildinf['lastrev'] = rev;
-      buildinf['timerange'][1] = commit.time;
-      buildinf['numrevs']++;
+    function groupTime(timestamp) {
+      return groupDistance > 0 ? timestamp - (timestamp % groupDistance) : timestamp;
     }
 
-    for (var testIndex in testIDs) {
-      var testID = testIDs[testIndex];
+    // Given a list of numbers, return median
+    function flatten(series) {
+      var iseries = [];
+      for (var x in series) {
+        if (series[x] !== null) {
+          // if (series[x] instanceof Array) {
+          //   // [ median, count ] pair, push it N times for weighting (this is not
+          //   // the most efficient way to do this)
+          //   for (var i = 0; i < series[x][1]; i++)
+          //     iseries.push(+series[x][0]);
+          // } else {
+            iseries.push(+series[x]);
+          // }
+        }
+      }
+      if (!iseries.length) return null;
+      iseries.sort();
+      var median;
+      if (iseries.length % 2)
+        median = iseries[(iseries.length - 1)/ 2];
+      else
+        median = iseries[iseries.length / 2];
+      return median;
+    }
+
+    var pointData = null;
+    var pointMetadata = null;
+    var ctime = -1;
+    var haveNull;
+
+    for (var commitIndex = 0; commitIndex < gData.commits.length; commitIndex++) {
+      var commit = gData.commits[commitIndex];
+
+      if (commitIndex < startIndex) continue;
+      if (commitIndex >= stopIndex) break;
+
+      var time;
+      if (gQueryVars['evenspacing']) {
+        time = start + commitIndex * (stop - start) / gData.commits.length;
+      } else {
+        time = groupTime(commit.time);
+      }
+
+      var testIndex;
+      if (time != ctime) {
+        pushDataPoint(pointData, pointMetadata, ctime, haveNull);
+        ctime = time;
+        pointData = [];
+        pointMetadata = {};
+        haveNull = false;
+      }
 
       var value = null;
       if (testID in commit.results) {
@@ -1188,29 +1166,34 @@ Plot.prototype._buildSeries = function(start, stop) {
           value = result.value;
       }
 
-      if (!series[testID]) series[testID] = [];
-      // Push all non-null datapoints onto list, pushdp() flattens
-      // this list, finding its midpoint/min/max.
-      series[testID].push(value);
-      if (value === null)
+      if (value !== null) {
+        pointData.push(value);
+        if (!pointMetadata['firstrev']) {
+          pointMetadata['firstrev'] = commit.commit;
+          pointMetadata['timerange'] = [ commit.time, commit.time ];
+          pointMetadata['numrevs'] = 1;
+        } else {
+          pointMetadata['lastrev'] = commit.commit;
+          pointMetadata['timerange'][1] = commit.time;
+          pointMetadata['numrevs']++;
+        }
+      } else {
         haveNull = true;
-      else
-        haveNonNull = true;
+      }
     }
-  }
-  pushdp(series, buildinf, ctime, haveNull, haveNonNull);
+    pushDataPoint(pointData, pointMetadata, ctime, haveNull);
 
-  var seriesData = [];
-  for (var testID in data) {
-    if (data[testID].length != builds.length) alert('data/buildinfo length mismatch');
+    if (testData.length != testMetadata.length)
+      alert('data/buildinfo length mismatch');
+
     seriesData.push({
       name: testID,
       label: gTests[testID].name,
-      data: data[testID],
-      buildinfo: builds,
-      yaxis: 1 + this.unitAxes[gTests[testID].unit]
+      data: testData,
+      buildinfo: testMetadata,
+      yaxis: 1 + self.unitAxes[gTests[testID].unit]
     });
-  }
+  });
 
   return seriesData;
 };
@@ -1234,24 +1217,25 @@ Plot.prototype.onClick = function(item) {
     // Clicked an item, switch tooltip to build detail mode
     this.tooltip.handleClick();
   } else if (this.highlighted) {
-    // Clicked on highlighted zoom space, do a graph zoom
+    // // Clicked on highlighted zoom space, do a graph zoom
 
-    // Extend the range if necessary to cover builds part of the condensed points.
-    // Fixes, for instance, a condensed point with a timestamp of 'april 4th'
-    // that contains builds through april 4th at 4pm. If your selection includes
-    // that point, you expect to get all builds that that point represents
-    var buildinfo = this.flot.getData()[0].buildinfo;
-    var firstbuild = 0;
-    for (var i = 0; i < buildinfo.length; i++) {
-      if (buildinfo[i]['time'] < this.highlightRange[0]) continue;
-      if (buildinfo[i]['time'] > this.highlightRange[1]) break;
-      if (!firstbuild) firstbuild = i;
-    }
-    var buildrange = getBuildTimeRange(buildinfo[firstbuild], buildinfo[Math.min(i-1, buildinfo.length - 1)]);
-    var zoomrange = [];
-    zoomrange[0] = Math.min(this.highlightRange[0], buildrange[0]);
-    zoomrange[1] = Math.max(this.highlightRange[1], buildrange[1]);
-    this.setZoomRange(zoomrange);
+    // // Extend the range if necessary to cover builds part of the condensed points.
+    // // Fixes, for instance, a condensed point with a timestamp of 'april 4th'
+    // // that contains builds through april 4th at 4pm. If your selection includes
+    // // that point, you expect to get all builds that that point represents
+    // var buildinfo = this.flot.getData()[0].buildinfo;
+    // var firstbuild = 0;
+    // for (var i = 0; i < buildinfo.length; i++) {
+    //   if (buildinfo[i]['time'] < this.highlightRange[0]) continue;
+    //   if (buildinfo[i]['time'] > this.highlightRange[1]) break;
+    //   if (!firstbuild) firstbuild = i;
+    // }
+    // var buildrange = getBuildTimeRange(buildinfo[firstbuild], buildinfo[Math.min(i-1, buildinfo.length - 1)]);
+    // var zoomrange = [];
+    // zoomrange[0] = Math.min(this.highlightRange[0], buildrange[0]);
+    // zoomrange[1] = Math.max(this.highlightRange[1], buildrange[1]);
+    // this.setZoomRange(zoomrange);
+    this.setZoomRange(this.highlightRange);
   }
 };
 
