@@ -668,19 +668,53 @@ function getPerBuildData(buildname, success, fail) {
   }
 }
 
+// X-axis tick logic table.
+// threshold: first item with threshold < current view range is used
+// init: adjusts d to a point from where to start creating ticks (generally rounds down to some round date);
+//       also applied for all successive items (to zero out the lower denominations too).
+// next: move d to where the next tick should be drawn.
 var gDateAxisThresholds = [
-  { threshold :1080*24*60*60, init : function(d) { d.setMonth       (0); }, next : function(d) { d.setFullYear(d.getFullYear()+1); }},
-  { threshold : 720*24*60*60, init : function(d) { d.setMonth       (0); }, next : function(d) { d.setMonth   (d.getMonth   ()+6); }},
-  { threshold :  60*24*60*60, init : function(d) { d.setDate        (1); }, next : function(d) { d.setMonth   (d.getMonth   ()+1); }},
-  { threshold :  30*24*60*60, init : function(d) { d.setDate        (1); }, next : function(d) { d.setDate    (d.getDate    ()+12); d.setDate(Math.max(1, ((d.getDate()-1)/10|0)*10)); }},
-  { threshold :   2*24*60*60, init : function(d) { d.setHours       (0); }, next : function(d) { d.setDate    (d.getDate    ()+1); }},
+  { threshold :1080*24*60*60, init : function(d) { d.setMonth       (0); }, next : function(d) { d.setFullYear(d.getFullYear()+ 1); }},
+  { threshold : 640*24*60*60, init : function(d) { d.setMonth       (0); }, next : function(d) { d.setMonth   (d.getMonth   ()+ 6); }},
+  { threshold :  60*24*60*60, init : function(d) { d.setDate        (1); }, next : function(d) { d.setMonth   (d.getMonth   ()+ 1); }},
+  { threshold :  15*24*60*60, init : function(d) { d.setDate        (1); }, next : function(d) { d.setDate    (d.getDate    ()+12); d.setDate(Math.max(1, ((d.getDate()-1)/10|0)*10)); }},
+  { threshold :   2*24*60*60, init : function(d) { d.setHours       (0); }, next : function(d) { d.setDate    (d.getDate    ()+ 1); }},
   { threshold :     24*60*60, init : function(d) { d.setHours       (0); }, next : function(d) { d.setHours   (d.getHours   ()+12); }},
-  { threshold :      1*60*60, init : function(d) { d.setMinutes     (0); }, next : function(d) { d.setHours   (d.getHours   ()+1); }},
-  { threshold :        10*60, init : function(d) { d.setMinutes     (0); }, next : function(d) { d.setMinutes (d.getMinutes ()+10); }},
-  { threshold :         1*60, init : function(d) { d.setSeconds     (0); }, next : function(d) { d.setMinutes (d.getMinutes ()+1); }},
-  { threshold :           10, init : function(d) { d.setSeconds     (0); }, next : function(d) { d.setSeconds (d.getSeconds ()+10); }},
-  { threshold :            1, init : function(d) { d.setMilliseconds(0); }, next : function(d) { d.setSeconds (d.getSeconds ()+1); }},
+  { threshold :      2*60*60, init : function(d) { d.setMinutes     (0); }, next : function(d) { d.setHours   (d.getHours   ()+ 1); }},
+  { threshold :      1*60*60, init : function(d) { d.setMinutes     (0); }, next : function(d) { d.setMinutes (d.getMinutes ()+30); }},
+  { threshold :        20*60, init : function(d) { d.setMinutes     (0); }, next : function(d) { d.setMinutes (d.getMinutes ()+10); }},
+  { threshold :         2*60, init : function(d) { d.setSeconds     (0); }, next : function(d) { d.setMinutes (d.getMinutes ()+ 1); }},
+  { threshold :           30, init : function(d) { d.setSeconds     (0); }, next : function(d) { d.setSeconds (d.getSeconds ()+10); }},
+  { threshold :           10, init : function(d) { d.setSeconds     (0); }, next : function(d) { d.setSeconds (d.getSeconds ()+ 5); }},
+  { threshold :            1, init : function(d) { d.setMilliseconds(0); }, next : function(d) { d.setSeconds (d.getSeconds ()+ 1); }},
 ];
+
+if (false) { // Zoom debugging
+  $(document).on('keydown', function(e) {
+    if (e.shiftKey || e.ctllKey || e.altKey || e.metaKey) return;
+    var left = Number(gPlot.zoomRange[0]);
+    var right = Number(gPlot.zoomRange[1]);
+    var center = (left + right) / 2;
+    var size = right - left;
+    if (e.key == 'ArrowUp')
+      size /= 1.05;
+    else
+      if (e.key == 'ArrowDown')
+        size *= 1.05;
+    else
+      if (e.key == 'ArrowLeft')
+        center -= size / 10;
+    else
+      if (e.key == 'ArrowRight')
+        center += size / 10;
+    else
+      return;
+    left = center - size/2;
+    right = center + size/2;
+    gPlot.setZoomRange([left, right]);
+    e.preventDefault();
+  });
+}
 
 //
 // Plot functions
@@ -844,7 +878,7 @@ function Plot(appendto) {
               abbrevMonths[date.getUTCMonth()] + '</div>' +
               '<div class="tick-year">' + date.getUTCFullYear() + '</div>' +
               releaseName;
-          } else if (range > 60*60) {
+          } else if (range > 2*60) {
             return ('0'+date.getUTCHours()).slice(-2) + ':' + ('0'+date.getUTCMinutes()).slice(-2);
           } else {
             return ('0'+date.getUTCHours()).slice(-2) + ':' + ('0'+date.getUTCMinutes()).slice(-2) + ':' + ('0'+date.getUTCSeconds()).slice(-2);
