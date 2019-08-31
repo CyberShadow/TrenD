@@ -143,7 +143,7 @@ ToDo getToDo(/*in*/ ref State state)
 	log("Calculating...");
 
 	auto scores = new int[commits.length];
-	auto scoreReasons = new int[string][commits.length];
+	auto scoreReasons = new real[string][commits.length];
 
 	void award(size_t commit, int points, string reason)
 	{
@@ -174,6 +174,12 @@ ToDo getToDo(/*in*/ ref State state)
 	auto testResultArray = new long[commits.length];
 
 	auto diffPoints = new int[commits.length];
+	void awardDiffPoints(size_t commit, int points, string reason)
+	{
+		diffPoints[commit] += points;
+		if (points > tests.length)
+			scoreReasons[commit][reason] += real(points) / tests.length;
+	}
 
 	foreach (test; tests)
 	{
@@ -192,7 +198,7 @@ ToDo getToDo(/*in*/ ref State state)
 		{
 			if (value == long.min)
 			{
-				diffPoints[i] += scoreFactors.untested;
+				awardDiffPoints(i, scoreFactors.untested, "untested");
 
 				if (bestIntermediaryScore < scores[i])
 				{
@@ -210,7 +216,7 @@ ToDo getToDo(/*in*/ ref State state)
 					auto points = v1 ? cast(int)(scoreFactors.diffMax * (v1-v0) / v1) : 0;
 					if (!test.exact)
 						points /= scoreFactors.diffInexact;
-					diffPoints[bestIntermediaryIndex] += points;
+					awardDiffPoints(i, points, "diff " ~ test.id);
 				}
 
 				lastIndex = i;
@@ -221,7 +227,7 @@ ToDo getToDo(/*in*/ ref State state)
 		}
 	}
 	foreach (i, points; diffPoints)
-		award(i, points / cast(int)tests.length, "diff");
+		scores[i] += points / cast(int)tests.length;
 
 	{
 		auto f = File("work/todolist.txt", "wb");
