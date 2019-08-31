@@ -109,8 +109,9 @@ static immutable:
 	int recentExp   =    50; /// curve exponent
 
 	/// Prefer commits between big differences in test results:
-	int diffMax     =  1000; /// max points (for 100% difference)
-	int diffInexact =   100; /// penalty divisor for inexact tests
+	int diffMax     =        /// max points (for 100% difference)
+		recentMax * 10; // a >10% difference is more interesting than the most recent commit
+	int diffInexact =   500; /// penalty divisor for inexact tests
 	int diffError   = diffMax / 2; /// points for zeroing in on an error
 
 	/// Prefer untested commits:
