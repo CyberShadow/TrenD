@@ -230,14 +230,14 @@ ToDo getToDo(/*in*/ ref State state)
 					assert(lastValue != long.min);
 					int points;
 					if (value == -1 || lastValue == -1) // one was an error
-						awardDiffPoints(i, scoreFactors.diffError, "error " ~ test.id);
+						awardDiffPoints(bestIntermediaryIndex, scoreFactors.diffError, "error " ~ test.id);
 					else
 					{
 						auto diff = abs(value - lastValue);
 						points = valueRange ? cast(int)(scoreFactors.diffMax * diff / valueRange) : 0;
 						if (!test.exact)
 							points /= scoreFactors.diffInexact;
-						awardDiffPoints(i, points, "diff " ~ test.id);
+						awardDiffPoints(bestIntermediaryIndex, points, "diff " ~ test.id);
 					}
 				}
 
