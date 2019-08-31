@@ -445,64 +445,6 @@ Tooltip.prototype.showBuild = function(label, series, buildset, buildindex, seri
 };
 
 //
-// Ajax for getting more graph data
-//
-
-// Fetch the series given by name (see gGraphData['allseries']), call success
-// or fail callback. Can call these immediately if the data is already available
-var gPendingFullData = {};
-function getFullSeries(dataname, success, fail) {
-  if (dataname in gFullData) {
-    if (success instanceof Function)
-      window.setTimeout(success, 0);
-  } else {
-    if (!(dataname in gPendingFullData)) {
-      gPendingFullData[dataname] = { 'success': [], 'fail': [] };
-      $.ajax({
-        xhr: dlProgress,
-        url: '/data/' + dataname + '.json',
-        success: function (data) {
-          gFullData[dataname] = data;
-          for (var i in gPendingFullData[dataname]['success'])
-            gPendingFullData[dataname]['success'][i].call(null);
-          delete gPendingFullData[dataname];
-        },
-        error: function(xhr, status, error) {
-          for (var i in gPendingFullData[dataname]['fail'])
-            gPendingFullData[dataname]['fail'][i].call(null, error);
-          delete gPendingFullData[dataname];
-        },
-        dataType: 'json'
-      });
-    }
-    if (success) gPendingFullData[dataname]['success'].push(success);
-    if (fail) gPendingFullData[dataname]['fail'].push(fail);
-  }
-}
-
-// Fetch the full memory dump for a build. Calls success() or fail() callbacks
-// when the data is ready (which can be before the call even returns)
-// (gets /data/<buildname>.json)
-function getPerBuildData(buildname, success, fail) {
-  if (gPerBuildData[buildname] !== undefined) {
-    if (success instanceof Function) success.apply(null);
-  } else {
-    $.ajax({
-      xhr: dlProgress,
-      url: '/data/' + buildname + '.json',
-      success: function (data) {
-        gPerBuildData[buildname] = data;
-        if (success instanceof Function) success.call(null);
-      },
-      error: function(xhr, status, error) {
-        if (fail instanceof Function) fail.call(null, error);
-      },
-      dataType: 'json'
-    });
-  }
-}
-
-//
 // Plot functions
 //
 
@@ -753,10 +695,6 @@ function Plot(appendto) {
 // back out. range is of format [x1, x2]. this.dataRange contains the range of
 // all data, this.zoomRange contains currently zoomed range if this.zoomed is
 // true.
-// If the specified range warrents fetching full data (getFullSeries), but we
-// don't have it, issue the ajax and set a callback to re-render the graph when
-// it returns (so we'll zoom in, but then re-render moments later with more
-// points)
 Plot.prototype.setZoomRange = function(range, nosync) {
   var zoomOut = false;
   if (range === undefined)
