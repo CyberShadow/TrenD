@@ -33,7 +33,7 @@ var gQueryVars = (function () {
 
 var gAnnotations = (function() {
   var annotations = [
-    /*TODO*/
+    //{date : new Date('December 17, 2015 01:02:03'), msg : 'Message here' }
   ];
 
   // Sort by date
@@ -57,9 +57,6 @@ var gMaxPoints = gQueryVars['maxpoints'] ? +gQueryVars['maxpoints'] : (gQueryVar
 
 // Merge tooltips if their position is within this many pixels
 var gAnnoMergeDist = 'annotationmerge' in gQueryVars ? +gQueryVars['annotationmerge'] : 50;
-
-// How many xaxis ticks there should be, ticks will be averaged to this density
-var gTickDensity = 'tickdensity' in gQueryVars ? +gQueryVars['tickdensity'] : 20;
 
 // 10-class paired qualitative color scheme from http://colorbrewer2.org/.
 // Ordered so that the important memory lines are given more prominent colors.
@@ -88,72 +85,6 @@ var gDarkColorsFirst = [
   "#CAB2D6", /* light purple */
   "#FDBF6F", /* light orange */
 ];
-
-// Dates mozilla-central *branched* to form various release trees. Used to
-// determine date placement on the X-axis of graphs
-// See: https://wiki.mozilla.org/RapidRelease/Calendar
-var gReleases = [
-  /* TODO */
-  /*
-  {dateStr: "2011-03-03", name: "Fx 4"},
-  {dateStr: "2011-04-12", name: "Fx 5"},
-  {dateStr: "2011-05-24", name: "Fx 6"},
-  {dateStr: "2011-07-05", name: "Fx 7"},
-  {dateStr: "2011-08-16", name: "Fx 8"},
-  {dateStr: "2011-09-27", name: "Fx 9"},
-  {dateStr: "2011-11-08", name: "Fx 10"},
-  {dateStr: "2011-12-20", name: "Fx 11"},
-  {dateStr: "2012-01-31", name: "Fx 12"},
-  {dateStr: "2012-03-13", name: "Fx 13"},
-  {dateStr: "2012-04-24", name: "Fx 14"},
-  {dateStr: "2012-06-05", name: "Fx 15"},
-  {dateStr: "2012-07-16", name: "Fx 16"},
-  {dateStr: "2012-08-27", name: "Fx 17"},
-  {dateStr: "2012-10-08", name: "Fx 18"},
-  {dateStr: "2012-11-19", name: "Fx 19"},
-  {dateStr: "2013-01-07", name: "Fx 20"},
-  {dateStr: "2013-02-18", name: "Fx 21"},
-  {dateStr: "2013-04-01", name: "Fx 22"},
-  {dateStr: "2013-05-13", name: "Fx 23"},
-  {dateStr: "2013-06-24", name: "Fx 24"},
-  {dateStr: "2013-08-05", name: "Fx 25"},
-  {dateStr: "2013-09-16", name: "Fx 26"},
-  {dateStr: "2013-10-28", name: "Fx 27"},
-  {dateStr: "2013-12-09", name: "Fx 28"},
-  {dateStr: "2014-02-03", name: "Fx 29"},
-  {dateStr: "2014-03-17", name: "Fx 30"},
-  {dateStr: "2014-04-28", name: "Fx 31"},
-  {dateStr: "2014-06-09", name: "Fx 32"},
-  {dateStr: "2014-07-21", name: "Fx 33"},
-  {dateStr: "2014-09-02", name: "Fx 34"},
-  {dateStr: "2014-10-13", name: "Fx 35"},
-  {dateStr: "2014-11-24", name: "Fx 36"},
-  {dateStr: "2015-01-12", name: "Fx 37"},
-  {dateStr: "2015-02-23", name: "Fx 38"},
-  {dateStr: "2015-04-06", name: "Fx 39"},
-  {dateStr: "2015-05-18", name: "Fx 40"},
-  {dateStr: "2015-06-29", name: "Fx 41"},
-  {dateStr: "2015-08-10", name: "Fx 42"}
-  */
-];
-
-// Create gReleases[x].date objects
-(function() {
-  for (var i = 0; i < gReleases.length; i++) {
-    // Seconds from epoch.
-    gReleases[i].date = Date.parse(gReleases[i].dateStr) / 1000;
-  }
-})();
-
-// Lookup gReleases by date
-var gReleaseLookup = function() {
-  var lookup = {};
-  for (var i = 0; i < gReleases.length; i++) {
-    lookup[gReleases[i].date] = gReleases[i].name;
-  }
-  return lookup;
-}();
-
 
 // Contents of data.json
 var gData;
@@ -204,12 +135,7 @@ function logError(obj) {
   }
 }
 
-// Takes a second-resolution unix timestamp, prints a UTCDate. If the date
-// is exactly midnight, remove the "00:00:00 GMT" (we have a lot of timestamps
-// condensed to day-resolution)
 function prettyDate(aTimestamp) {
-  // If the date is exactly midnight, remove the time portion.
-  // (overview data is coalesced by day by default)
   return new Date(aTimestamp * 1000).toISOString().replace("T", " ").replace(".000Z", "");
 }
 
@@ -352,45 +278,11 @@ function dlProgress() {
   return xhr;
 }
 
-// Round unix timestamp to the nearest midnight UTC. (Not *that day*'s midnight)
-function roundDay(date) {
-  return Math.round(date / (24 * 60 * 60)) * 24 * 60 * 60;
-}
-
-// Round a date (seconds since epoch) up to the next day.
-function roundDayUp(date) {
-  return Math.ceil(date / (24 * 60 * 60)) * 24 * 60 * 60;
-}
-
-// Round a date (seconds since epoch) down to the previous day.
-function roundDayDown(date) {
-  return Math.floor(date / (24 * 60 * 60)) * 24 * 60 * 60;
-}
-
-// Get the full time range covered by two (possibly condensed) build_info structs
-function getBuildTimeRange(firstbuild, lastbuild)
-{
-  var range = [];
-  if ('timerange' in firstbuild && firstbuild['timerange'][0] < firstbuild['time'])
-    range.push(firstbuild['timerange'][0]);
-  else
-    range.push(firstbuild['time']);
-
-  if ('timerange' in lastbuild && lastbuild['timerange'][1] > lastbuild['time'])
-    range.push(lastbuild['timerange'][1]);
-  else
-    range.push(lastbuild['time']);
-
-  return range;
-}
-
-
 //
 // Tooltip
 //
 
-// A tooltip that can be positioned relative to its parent via .hover(),
-// or 'zoomed' to inflate and cover its parent via .zoom()
+// A tooltip that can be positioned relative to its parent via .hover()
 function Tooltip(parent) {
   if (!(this instanceof Tooltip)) {
     logError("Tooltip() used incorrectly");
@@ -410,18 +302,15 @@ function Tooltip(parent) {
   });
   this.obj.mouseleave(function(e) {
     self.mouseover = false;
-    if (self.obj.is(":visible") && !self.hovered && !self.isZoomed()) {
+    if (self.obj.is(":visible") && !self.hovered) {
       self._fadeOut();
     }
   });
 
   this.obj.data('owner', this);
   this.hovered = false;
-  this.onUnzoomFuncs = [];
   this.faded = true;
 }
-
-Tooltip.prototype.isZoomed = function () { return this.obj.is('.zoomed'); };
 
 Tooltip.prototype.append = function(obj) {
   this.content.append(obj);
@@ -435,9 +324,6 @@ Tooltip.prototype.empty = function() {
 };
 
 Tooltip.prototype.hover = function(x, y, nofade) {
-  if (this.isZoomed())
-    return;
-
   this.hovered = true;
   var poffset = this.obj.parent().offset();
 
@@ -464,8 +350,6 @@ Tooltip.prototype.hover = function(x, y, nofade) {
 };
 
 Tooltip.prototype.unHover = function() {
-  if (this.isZoomed())
-    return;
   this.hovered = false;
   if (!this.mouseover) {
     // Don't actually fade till the mouse goes away, see handlers in constructor
@@ -581,39 +465,6 @@ Tooltip.prototype.showBuild = function(label, series, buildset, buildindex, seri
   this.append(ttinner);
 };
 
-Tooltip.prototype.onUnzoom = function(callback) {
-  if (this.isZoomed())
-    this.onUnzoomFuncs.push(callback);
-};
-
-Tooltip.prototype.unzoom = function() {
-  if (this.isZoomed() && !this.obj.is(':animated'))
-  {
-    var w = this.obj.parent().width();
-    var h = this.obj.parent().height();
-    var self = this;
-    this.obj.animate({
-        width: Math.round(0.5 * w) + 'px',
-        height: Math.round(0.5 * h) + 'px',
-        top: Math.round(0.25 * h) + 'px',
-        left: Math.round(0.25 * w) + 'px',
-        opacity: '0'
-      }, 250, function() {
-        self.obj.removeAttr('style').hide().removeClass('zoomed');
-        self.obj.find('.closeButton').remove();
-    });
-
-    var callback;
-    while ((callback = this.onUnzoomFuncs.pop()))
-      callback.apply(this);
-
-    var url;
-    while ((url = gObjectURLs.pop())) {
-      window.URL.revokeObjectURL(url);
-    }
-  }
-};
-
 //
 // Ajax for getting more graph data
 //
@@ -672,6 +523,10 @@ function getPerBuildData(buildname, success, fail) {
   }
 }
 
+//
+// Plot functions
+//
+
 // X-axis tick logic table.
 // threshold: first item with threshold < current view range is used
 // init: adjusts d to a point from where to start creating ticks (generally rounds down to some round date);
@@ -721,10 +576,6 @@ if (false) { // Zoom debugging
 }
 
 //
-// Plot functions
-//
-
-//
 // Creates a plot, appends it to <appendto>
 // - axis -> { 'AxisName' : 'Nicename', ... }
 //
@@ -748,7 +599,7 @@ function Plot(appendto) {
   this.zoomed = false;
 
   this.dataRange = gDataRange;
-  logMsg("Generating graph \""+name+"\", data range - " + JSON.stringify(this.dataRange));
+  logMsg("Generating graph, data range - " + JSON.stringify(this.dataRange));
   this.zoomRange = this.dataRange;
 
   this.container = $.new('div').addClass('graphContainer');
@@ -808,39 +659,6 @@ function Plot(appendto) {
         ticks: function(axis) {
           var points = [];
           var range = axis.max - axis.min;
-          /*
-          var prevdate = 0;
-          for (var i = 0; i < gReleases.length; i++) {
-            var date = gReleases[i].date;
-            var dist = date - prevdate;
-            if (axis.min <= date && date <= axis.max &&
-                dist >= range / gTickDensity) {
-              points.push(date);
-              prevdate = date;
-            }
-          }
-
-          if (points.length >= 2) {
-            return points;
-          }
-
-          if (points.length == 1) {
-            var minDay = roundDayUp(axis.min);
-            var maxDay = roundDayDown(axis.max);
-
-            if (Math.abs(points[0] - minDay) > Math.abs(points[0] - maxDay)) {
-              points.push(minDay);
-            }
-            else {
-              points.push(maxDay);
-            }
-
-            return points;
-          }
-
-          points.push(roundDayUp(axis.min));
-          points.push(roundDayDown(axis.max));
-          */
           var d = new Date(axis.min*1000);
           for (var ind in gDateAxisThresholds) {
             var t = gDateAxisThresholds[ind];
@@ -870,15 +688,9 @@ function Plot(appendto) {
             var abbrevMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul',
                                 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-            var releaseName = "";
-            if (gReleaseLookup[val]) {
-              releaseName = '<div class="tick-release-name">' + gReleaseLookup[val] + '</div>';
-            }
-
             return '<div class="tick-day-month">' + date.getUTCDate() + ' ' +
               abbrevMonths[date.getUTCMonth()] + '</div>' +
-              '<div class="tick-year">' + date.getUTCFullYear() + '</div>' +
-              releaseName;
+              '<div class="tick-year">' + date.getUTCFullYear() + '</div>';
           } else if (range > 2*60) {
             return ('0'+date.getUTCHours()).slice(-2) + ':' + ('0'+date.getUTCMinutes()).slice(-2);
           } else {
@@ -1219,24 +1031,7 @@ Plot.prototype.onClick = function(item) {
     // Clicked an item, switch tooltip to build detail mode
     this.tooltip.handleClick();
   } else if (this.highlighted) {
-    // // Clicked on highlighted zoom space, do a graph zoom
-
-    // // Extend the range if necessary to cover builds part of the condensed points.
-    // // Fixes, for instance, a condensed point with a timestamp of 'april 4th'
-    // // that contains builds through april 4th at 4pm. If your selection includes
-    // // that point, you expect to get all builds that that point represents
-    // var buildinfo = this.flot.getData()[0].buildinfo;
-    // var firstbuild = 0;
-    // for (var i = 0; i < buildinfo.length; i++) {
-    //   if (buildinfo[i]['time'] < this.highlightRange[0]) continue;
-    //   if (buildinfo[i]['time'] > this.highlightRange[1]) break;
-    //   if (!firstbuild) firstbuild = i;
-    // }
-    // var buildrange = getBuildTimeRange(buildinfo[firstbuild], buildinfo[Math.min(i-1, buildinfo.length - 1)]);
-    // var zoomrange = [];
-    // zoomrange[0] = Math.min(this.highlightRange[0], buildrange[0]);
-    // zoomrange[1] = Math.max(this.highlightRange[1], buildrange[1]);
-    // this.setZoomRange(zoomrange);
+    // Clicked on highlighted zoom space, do a graph zoom
     this.setZoomRange(this.highlightRange);
   }
 };
@@ -1246,12 +1041,6 @@ Plot.prototype._drawAnnotations = function() {
   this.annotations.empty();
 
   function includeAnno(anno) {
-    if (gQueryVars['mobile'] && anno['mobile'] === false)
-        return false;
-    if (!gQueryVars['mobile'] && anno['desktop'] === false)
-        return false;
-    if (anno['whitelist'] && anno['whitelist'].indexOf(self.name) == -1)
-        return false;
     return true;
   }
 
@@ -1311,9 +1100,6 @@ Plot.prototype._drawAnnotations = function() {
       div.css('left', left);
 
       div.mouseover(function() {
-        // Don't hijack a tooltip that's in the process of zooming
-        if (self.tooltip.isZoomed())
-          return;
         self.tooltip.empty();
         self.tooltip.append(anno['msg']);
         var x = left
@@ -1345,15 +1131,6 @@ Plot.prototype.showHighlight = function(location, width) {
   this._highlightWidth = width;
 
   var xaxis = this.flot.getAxes().xaxis;
-/*
-  var minZoomDays = 3;
-  if (xaxis.max - xaxis.min <= minZoomDays * 24 * 60 * 60) {
-    this.highlighted = false;
-    this.zoomSelector.stop().fadeTo(50, 0);
-    return;
-  }
-*/
-
   var off = this.flot.getPlotOffset();
   var left = location - width / 2;
   var overflow = left + width - this.flot.width() - off.left;
@@ -1385,9 +1162,6 @@ Plot.prototype.hideHighlight = function() {
 // If we're hovering over a point, show a tooltip. Otherwise, show the
 // zoom selector if we're not beyond our zoom-in limit
 Plot.prototype.onHover = function(item, pos) {
-  if (this.tooltip.isZoomed()) {
-    return;
-  }
   var self = this;
   if (item &&
       (!this.hoveredItem || (item.dataIndex !== this.hoveredItem.dataIndex))) {
@@ -1503,14 +1277,6 @@ $(function () {
       $('#graphs').append($.new('p', null, { 'text-align': 'center', color: '#F55' }).text(status + ': ' + error));
     },
     dataType: 'json'
-  });
-
-  // Handler to close zoomed tooltips upon clicking outside of them
-  $('body').bind('click', function(e) {
-    if (!$(e.target).is('.tooltip') && !$(e.target).parents('.graphContainer').length)
-      $('.tooltip.zoomed').each(function(ind,ele) {
-        $(ele).data('owner').unzoom();
-      });
   });
 
   $('#pin').change(function() {
