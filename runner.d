@@ -183,6 +183,10 @@ ToDo getToDo(/*in*/ ref State state)
 	foreach (test; tests)
 	{
 		testResultArray[] = long.min;
+		foreach (i, ref value; testResultArray)
+			if (state.badCommits.get(commits[i].hash, false))
+				value = -1;
+
 		long valueRange;
 		{
 			long minValue = long.max;
