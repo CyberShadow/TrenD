@@ -143,13 +143,12 @@ ToDo getToDo(/*in*/ ref State state)
 	log("Calculating...");
 
 	auto scores = new int[commits.length];
-	debug(TODO) auto scoreReasons = new int[string][commits.length];
+	auto scoreReasons = new int[string][commits.length];
 
 	void award(size_t commit, int points, string reason)
 	{
 		scores[commit] += points;
-		debug (TODO)
-			scoreReasons[commit][reason] += points;
+		scoreReasons[commit][reason] += points;
 	}
 
 	foreach (i; 0..commits.length)
@@ -224,9 +223,8 @@ ToDo getToDo(/*in*/ ref State state)
 	foreach (i, points; diffPoints)
 		award(i, points / cast(int)tests.length, "diff");
 
-	debug (TODO)
 	{
-		auto f = File("todolist.txt", "wb");
+		auto f = File("work/todolist.txt", "wb");
 		foreach (i, commit; commits)
 			f.writefln("%s %s %5d %s", commit.hash, commit.time.formatTime!`Y-m-d H:i:s`, scores[i], scoreReasons[i]);
 	}
