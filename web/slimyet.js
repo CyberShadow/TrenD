@@ -511,8 +511,11 @@ Tooltip.prototype.showBuild = function(label, series, buildset, buildindex, seri
     ttinner.append($.new('span').css('color', gDarkColorsFirst[seriesindex]).text(gTests[seriesname].name), ': ');
   var valobj = $.new('p').text(formatUnit(value, unit) + ' ').attr('title', value + ' ' + unit);
   // Delta
-  if (buildindex > 0 && series[buildindex - 1][1] !== null) {
-    valobj.append(mkDelta(value, series[buildindex - 1][1], unit));
+  var prev = gCommits[rev].prev;
+  if (prev && seriesname in prev.results) {
+    var prevResult = prev.results[seriesname];
+    if (prevResult.error === null)
+      valobj.append(mkDelta(value, prevResult.value, unit));
   }
   ttinner.append(valobj);
   if (!build['lastrev']) {
