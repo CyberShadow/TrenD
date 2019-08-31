@@ -1077,11 +1077,14 @@ Plot.prototype._buildSeries = function(start, stop) {
     var testData = [];
     var testMetadata = [];
 
+    function pushNode(time, y, metadata) {
+      testData.push([ time, y ]);
+      testMetadata.push(metadata);
+    }
     // Null data points indicate gaps in the data,
     // and break the line in the Flot chart.
     function pushNull(time) {
-      testData.push([ time, null ]);
-      testMetadata.push(null);
+      pushNode(time, null, null);
     }
 
     // Push a datapoint (one or more commits) onto builds/data
@@ -1090,34 +1093,39 @@ Plot.prototype._buildSeries = function(start, stop) {
         return;
 
       if (pointData.length) {
-        // Push leading null point if there is a null before non-null
-        var i;
-        var sawNull = false;
+        var i, value;
+        var min = null, minIndex, max = null, maxIndex;
         for (i = 0; i < allValues.length; i++) {
-          if (allValues[i] === null)
+          value = allValues[i];
+          if (value === null)
+            continue;
+          if (min === null || min > value) {
+            min = value;
+            minIndex = i;
+          }
+          if (max === null || max < value) {
+            max = value;
+            maxIndex = i;
+          }
+        }
+        var sawNull = false;
+        var lastValue = null;
+        for (i = 0; i < allValues.length; i++) {
+          value = allValues[i];
+          if (value === null)
             sawNull = true;
           else
-            if (sawNull) {
-              pushNull(pointMetadata.timerange[0]);
-              break;
+            if (i == 0 || i == minIndex || i == maxIndex || i + 1 == allValues.length) {
+              if (sawNull)
+                pushNull(ctime);
+              sawNull = false;
+              if (value != lastValue)
+                pushNode(ctime, value, pointMetadata);
+              lastValue = value;
             }
         }
-
-        pointData = [ ctime, flatten(pointData) ];
-        testData.push(pointData);
-        testMetadata.push(pointMetadata);
-
-        // Push trailing null point if there is a null after a non-null
-        var sawNonNull = false;
-        for (i = 0; i < allValues.length; i++) {
-          if (allValues[i] !== null)
-            sawNonNull = true;
-          else
-            if (sawNonNull) {
-              pushNull(pointMetadata.timerange[1]);
-              break;
-            }
-        }
+        if (sawNull)
+          pushNull(ctime);
       } else {
         pushNull(ctime);
       }
@@ -1125,31 +1133,6 @@ Plot.prototype._buildSeries = function(start, stop) {
 
     function groupTime(timestamp) {
       return groupDistance > 0 ? timestamp - (timestamp % groupDistance) : timestamp;
-    }
-
-    // Given a list of numbers, return median
-    function flatten(series) {
-      var iseries = [];
-      for (var x in series) {
-        if (series[x] !== null) {
-          // if (series[x] instanceof Array) {
-          //   // [ median, count ] pair, push it N times for weighting (this is not
-          //   // the most efficient way to do this)
-          //   for (var i = 0; i < series[x][1]; i++)
-          //     iseries.push(+series[x][0]);
-          // } else {
-            iseries.push(+series[x]);
-          // }
-        }
-      }
-      if (!iseries.length) return null;
-      iseries.sort();
-      var median;
-      if (iseries.length % 2)
-        median = iseries[(iseries.length - 1)/ 2];
-      else
-        median = iseries[iseries.length / 2];
-      return median;
     }
 
     var pointData = null;
