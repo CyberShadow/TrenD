@@ -80,6 +80,7 @@ void saveJson(in ref State state, string target, Stats stats)
 		{
 			string commit, message;
 			long time;
+			bool error;
 		}
 		Commit[] commits;
 
@@ -104,7 +105,7 @@ void saveJson(in ref State state, string target, Stats stats)
 	JsonData data;
 
 	foreach (ref commit; state.commits)
-		data.commits ~= JsonData.Commit(commit.hash, commit.message.join("\n"), commit.time.toUnixTime);
+		data.commits ~= JsonData.Commit(commit.hash, commit.message.join("\n"), commit.time.toUnixTime, state.badCommits.get(commit.hash, false));
 	foreach (string testID, string commit, long value, string error; query("SELECT [TestID], [Commit], [Value], [Error] FROM [Results]").iterate())
 		data.results ~= JsonData.Result(testID, commit, value, error);
 	foreach (test; tests)
