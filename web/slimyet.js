@@ -143,11 +143,14 @@ function gitURL(rev) {
   var repo = firstLine.substr(0, i);
   var message = firstLine.substr(i+2);
   var m = message.match(/^Merge pull request #(\d+) from /);
-  var href;
   if (m)
     return 'https://github.com/D-Programming-Language/'+repo+'/pull/'+m[1];
-  else
-    return 'https://bitbucket.org/cybershadow/d/commits/' + rev;
+
+  m = firstLine.match(/^[^\n]* \(#([0-9]+)\)/);
+  if (m)
+    return 'https://github.com/D-Programming-Language/'+repo+'/pull/'+m[1];
+
+  return 'https://bitbucket.org/cybershadow/d/commits/' + rev;
 }
 
 function gitRangeURL(rev0, rev1) {
