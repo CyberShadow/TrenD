@@ -424,19 +424,23 @@ Tooltip.prototype.showBuild = function(label, series, buildset, buildindex, seri
       }
     }
 
-    if (numSkipped > 0)
+    if (numSkipped > 0 || (c && c.error) || (c && c.results[seriesname].error !== null))
       ttinner.append(
         $.new('hr')
           .css('border-top', '1px solid #888'),
         $.new('p')
-          .text(numSkipped +
-                ' untested commit' + (numSkipped > 1 ? 's' : '') +
-                ' since ' +
+          .text((numSkipped > 0 ?
+				 numSkipped +
+                 ' untested commit' + (numSkipped > 1 ? 's' : '') +
+                 ' since ' :
+				 'Previous commit, '
+				) +
                 (c === null
                  ? 'the beginning'
                  : (c.commit.slice(0,12) +
                     ' (' + prettyDate(c.time) + ')' +
-                    (c.results[seriesname].error !== null ? ', which errored,' : '')
+                    (c.error ? ', which failed to build,' :
+					 c.results[seriesname].error !== null ? ', which errored,' : '')
                    )) +
                 ' not shown'));
   }
