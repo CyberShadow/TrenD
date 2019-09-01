@@ -255,14 +255,19 @@ ToDo getToDo(/*in*/ ref State state)
 	{
 		auto f = File("work/todolist.txt", "wb");
 
+		string sortReasons(real[string] reasons)
+		{
+			return reasons.byPair.array.sort!((a, b) => a[1] > b[1]).map!(pair => format("%s:%s", pair[0], pair[1])).join(", ");
+		}
+
 		f.writeln("---------------------------------------------- Top items:");
 		foreach (i; index[0 .. min(100, $)])
-			f.writefln("%s %s %5d %s", commits[i].hash, commits[i].time.formatTime!`Y-m-d H:i:s`, scores[i], scoreReasons[i]);
+			f.writefln("%s %s %5d %s", commits[i].hash, commits[i].time.formatTime!`Y-m-d H:i:s`, scores[i], sortReasons(scoreReasons[i]));
 
 		f.writeln();
 		f.writeln("---------------------------------------------- Chronological list:");
 		foreach (i, commit; commits)
-			f.writefln("%s %s %5d %s", commit.hash, commit.time.formatTime!`Y-m-d H:i:s`, scores[i], scoreReasons[i]);
+			f.writefln("%s %s %5d %s", commit.hash, commit.time.formatTime!`Y-m-d H:i:s`, scores[i], sortReasons(scoreReasons[i]));
 
 	}
 
