@@ -134,7 +134,6 @@ struct ExecutionStats
 	long userTime   = long.max;
 	long kernelTime = long.max;
 	long maxRSS     = long.max;
-	long ioReads    = long.max;
 }
 
 final class Program
@@ -240,7 +239,6 @@ final class Program
 				iterationStats.userTime   = nsecs(rusage.ru_utime);
 				iterationStats.kernelTime = nsecs(rusage.ru_stime);
 				iterationStats.maxRSS     = rusage.ru_maxrss * 1024L;
-				iterationStats.ioReads    = rusage.ru_inblock;
 			}
 
 			sw.stop();
@@ -399,7 +397,6 @@ class ProgramStatTest(string field, Unit _unit, bool _exact, string _name, strin
 alias ProgramRealTimeTest    = ProgramStatTest!("realTime"  , Unit.nanoseconds, false, "real time"  , "total real (elapsed) time spent");
 alias ProgramUserTimeTest    = ProgramStatTest!("userTime"  , Unit.nanoseconds, false, "user time"  , "total user time (CPU time spent in userspace) spent");
 alias ProgramKernelTimeTest  = ProgramStatTest!("kernelTime", Unit.nanoseconds, false, "kernel time", "total kernel time (CPU time spent in the kernel) spent");
-alias ProgramDiskReadsTest   = ProgramStatTest!("ioReads"   , Unit.operations , true , "I/O reads"  , "number of times the filesystem had to perform input");
 //alias ProgramMemoryUsageTest = ProgramStatTest!("maxRSS"    , Unit.bytes      , true , "max RSS"    , "peak RSS (resident set size memory usage) used");
 
 class ValgrindTest : ProgramPhaseTest
@@ -516,7 +513,7 @@ static this()
 	{
 		auto program = new Program(info);
 		foreach (PhaseTest; TypeTuple!(ProgramCompilePhaseTest, ProgramLinkPhaseTest, ProgramExecutionPhaseTest))
-			foreach (StatTest; TypeTuple!(ProgramRealTimeTest, ProgramUserTimeTest, ProgramKernelTimeTest, ProgramDiskReadsTest, ProgramInstructionCountTest, ProgramMemoryUsageTest))
+			foreach (StatTest; TypeTuple!(ProgramRealTimeTest, ProgramUserTimeTest, ProgramKernelTimeTest, ProgramInstructionCountTest, ProgramMemoryUsageTest))
 				tests ~= new PhaseTest!StatTest(program);
 		tests ~= new ObjectSizeTest(program);
 		tests ~= new BinarySizeTest(program);
