@@ -48,7 +48,9 @@ enum Unit
 {
 	bytes,
 	nanoseconds,
+	// Unit-less amounts:
 	instructions,
+	operations,
 }
 
 // ***************************************************************************
