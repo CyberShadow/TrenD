@@ -388,7 +388,7 @@ class ProgramStatTest(string field, Unit _unit, bool _exact, string _name, strin
 	override long sample()
 	{
 		auto target = getTarget();
-		target.need(program.info.iterations);
+		target.need(exact ? 1 : program.info.iterations);
 		auto stats = target.bestStats;
 		auto value = mixin("stats." ~ field);
 		enforce(value != typeof(value).max, "Value can't be measured");
